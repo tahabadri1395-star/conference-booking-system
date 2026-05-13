@@ -9,6 +9,7 @@ import BookRoomPage from './pages/BookRoomPage'
 import MyRequestsPage from './pages/MyRequestsPage'
 import AdminPanelPage from './pages/AdminPanelPage'
 import RoomsPage from './pages/RoomsPage'
+import CalendarPage from './pages/CalendarPage'
 
 // Protects any route that requires login
 function ProtectedRoute({ children }) {
@@ -50,13 +51,17 @@ function PublicLayout({ children }) {
         </div>
 
         <nav className="public-header-nav" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+          <NavLink to="/calendar" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ padding: '6px 12px', borderRadius: 7 }}>
+            <span className="public-nav-label">Calendar</span>
+          </NavLink>
           <NavLink to="/book" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             style={{ padding: '6px 12px', borderRadius: 7 }}>
             <span className="public-nav-label">Book a Room</span>
           </NavLink>
           <NavLink to="/rooms" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             style={{ padding: '6px 12px', borderRadius: 7 }}>
-            <span className="public-nav-label">Schedule</span>
+            <span className="public-nav-label">Rooms</span>
           </NavLink>
           {isAdmin
             ? <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard')} style={{ marginLeft: 4 }}>
@@ -81,8 +86,9 @@ function AppRoutes() {
   return (
     <Routes>
       {/* Public pages — no login needed */}
-      <Route path="/book" element={<PublicLayout><BookRoomPage /></PublicLayout>} />
-      <Route path="/rooms" element={<PublicLayout><RoomsPage /></PublicLayout>} />
+      <Route path="/book"     element={<PublicLayout><BookRoomPage /></PublicLayout>} />
+      <Route path="/rooms"    element={<PublicLayout><RoomsPage /></PublicLayout>} />
+      <Route path="/calendar" element={<PublicLayout><CalendarPage /></PublicLayout>} />
 
       {/* Login — redirect based on role if already signed in */}
       <Route path="/login" element={
@@ -92,7 +98,7 @@ function AppRoutes() {
       } />
 
       {/* Root redirect */}
-      <Route path="/" element={<Navigate to="/book" replace />} />
+      <Route path="/" element={<Navigate to="/calendar" replace />} />
 
       {/* Any logged-in user */}
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>

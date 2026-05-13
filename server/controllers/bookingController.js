@@ -1,4 +1,5 @@
 const { pool, uuidv4, parseBooking, parseRoom } = require('../models/db');
+const { sendBookingEmails } = require('../utils/email');
 
 async function hasConflict(roomId, date, startTime, endTime, excludeId = null) {
   const { rows } = await pool.query(`
@@ -78,11 +79,13 @@ exports.createBooking = async (req, res) => {
     const id = uuidv4();
     await pool.query(`
       INSERT INTO bookings (id, name, email, room_id, date, start_time, end_time, purpose, attendees, status, admin_remarks, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', '', $10)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'approved', '', $10)
     `, [id, name.trim(), email.trim().toLowerCase(), roomId, date, startTime, endTime, purpose.trim(), parseInt(attendees, 10), new Date().toISOString()]);
 
     const { rows: br } = await pool.query('SELECT * FROM bookings WHERE id = $1', [id]);
-    res.status(201).json({ success: true, message: 'Booking request submitted successfully', data: { ...parseBooking(br[0]), room } });
+    const booking = parseBooking(br[0]);
+    sendBookingEmails({ booking, room }).catch(() => {});
+    res.status(201).json({ success: true, message: 'Booking confirmed!', data: { ...booking, room } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }

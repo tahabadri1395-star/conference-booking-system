@@ -5,6 +5,7 @@ import api from '../utils/api'
 
 const Icons = {
   grid:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
+  cal:      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>,
   plus:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 5v14M5 12h14"/></svg>,
   list:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>,
   door:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M15 11h.01"/></svg>,
@@ -58,6 +59,9 @@ export default function Layout() {
               <span className="nav-icon">{Icons.grid}</span>Dashboard
             </NavLink>
           )}
+          <NavLink to="/calendar" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+            <span className="nav-icon">{Icons.cal}</span>Calendar
+          </NavLink>
           <NavLink to="/book" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
             <span className="nav-icon">{Icons.plus}</span>Book a Room
           </NavLink>
@@ -102,6 +106,9 @@ export default function Layout() {
             {Icons.grid}<span>Home</span>
           </NavLink>
         )}
+        <NavLink to="/calendar" className={navItem}>
+          {Icons.cal}<span>Calendar</span>
+        </NavLink>
         <NavLink to="/book" className={navItem}>
           {Icons.plus}<span>Book</span>
         </NavLink>

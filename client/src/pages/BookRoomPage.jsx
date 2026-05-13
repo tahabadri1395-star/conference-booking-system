@@ -119,12 +119,12 @@ export default function BookRoomPage() {
     return (
       <div className="page animate-in">
         <div style={{ maxWidth: 480, margin: '60px auto', textAlign: 'center' }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: 12 }}>🎉</div>
+          <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'var(--green-bg)', border: '2px solid var(--green)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', fontSize: '1.8rem' }}>✓</div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 700, marginBottom: 8 }}>
-            Request Submitted!
+            Room Booked!
           </h1>
           <p style={{ color: 'var(--text-3)', marginBottom: 28, fontSize: '0.9rem' }}>
-            Pending admin approval. You'll be notified once reviewed.
+            Your booking is confirmed. A confirmation email has been sent.
           </p>
           <div className="card" style={{ textAlign: 'left', marginBottom: 20 }}>
             {[
@@ -303,7 +303,7 @@ export default function BookRoomPage() {
             {loading ? 'Submitting…' : 'Submit Booking Request'}
           </button>
           <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', textAlign: 'center', marginTop: 8 }}>
-            Your request will be pending until an admin approves it.
+            Your booking is instantly confirmed. A confirmation email will be sent.
           </p>
         </div>
 
