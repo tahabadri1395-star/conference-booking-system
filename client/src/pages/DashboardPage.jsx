@@ -87,10 +87,7 @@ export default function DashboardPage() {
         <StatCard label="Total Bookings" value={stats?.total ?? 0} loading={loading} icon={
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
         } />
-        <StatCard label="Pending Review" value={stats?.pending ?? 0} color="yellow" loading={loading} icon={
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        } />
-        <StatCard label="Approved" value={stats?.approved ?? 0} color="green" loading={loading} icon={
+<StatCard label="Approved" value={stats?.approved ?? 0} color="green" loading={loading} icon={
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
         } />
         <StatCard label="Rejected" value={stats?.rejected ?? 0} color="red" loading={loading} icon={
@@ -190,7 +187,7 @@ export default function DashboardPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {todayItems.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(b => (
                 <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: 'var(--bg-3)', borderRadius: 8 }}>
-                  <div style={{ width: 3, height: 36, background: b.status === 'approved' ? 'var(--green)' : b.status === 'pending' ? 'var(--yellow)' : 'var(--red)', borderRadius: 4 }} />
+                  <div style={{ width: 3, height: 36, background: b.status === 'approved' ? 'var(--green)' : 'var(--red)', borderRadius: 4 }} />
                   <div>
                     <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)' }}>{b.purpose}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-3)' }}>{b.startTime} – {b.endTime} · {b.room?.name}</div>

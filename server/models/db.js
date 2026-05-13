@@ -37,12 +37,14 @@ async function initDb() {
       end_time      TEXT NOT NULL,
       purpose       TEXT NOT NULL,
       attendees     INTEGER NOT NULL DEFAULT 1,
-      status        TEXT NOT NULL DEFAULT 'pending',
+      status        TEXT NOT NULL DEFAULT 'approved',
       admin_remarks TEXT NOT NULL DEFAULT '',
       created_at    TEXT NOT NULL,
       updated_at    TEXT
     );
   `);
+
+  await pool.query(`UPDATE bookings SET status = 'approved' WHERE status = 'pending'`);
 
   const SALT = 10;
   const seeds = [

@@ -141,7 +141,7 @@ export default function BookRoomPage() {
             ))}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '0.875rem' }}>
               <span style={{ color: 'var(--text-3)' }}>Status</span>
-              <span className="badge badge-pending">Pending</span>
+              <span className="badge badge-approved">Confirmed</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>

@@ -43,7 +43,6 @@ export default function MyRequestsPage() {
 
   const counts = {
     all: bookings.length,
-    pending: bookings.filter(b => b.status === 'pending').length,
     approved: bookings.filter(b => b.status === 'approved').length,
     rejected: bookings.filter(b => b.status === 'rejected').length,
   }
@@ -73,7 +72,7 @@ export default function MyRequestsPage() {
       {/* Filters */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         <div className="filters-bar" style={{ margin: 0 }}>
-          {['all', 'pending', 'approved', 'rejected'].map(f => (
+          {['all', 'approved', 'rejected'].map(f => (
             <button key={f} className={`filter-btn${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
               {f.charAt(0).toUpperCase() + f.slice(1)}
               <span style={{ marginLeft: 5, opacity: 0.7, fontSize: '0.7rem' }}>({counts[f]})</span>
@@ -108,7 +107,7 @@ export default function MyRequestsPage() {
               {/* Color bar */}
               <div style={{
                 width: 4, height: 60, borderRadius: 4, flexShrink: 0,
-                background: b.status === 'approved' ? 'var(--green)' : b.status === 'pending' ? 'var(--yellow)' : 'var(--red)'
+                background: b.status === 'approved' ? 'var(--green)' : 'var(--red)'
               }} />
 
               <div className="booking-time-block">

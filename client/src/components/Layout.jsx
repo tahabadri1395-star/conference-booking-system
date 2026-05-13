@@ -1,7 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useState, useEffect } from 'react'
-import api from '../utils/api'
 
 const Icons = {
   grid:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>,
@@ -17,15 +15,6 @@ const Icons = {
 export default function Layout() {
   const { user, logout, isAdmin } = useAuth()
   const navigate = useNavigate()
-  const [pendingCount, setPendingCount] = useState(0)
-
-  useEffect(() => {
-    if (isAdmin) {
-      api.get('/bookings?status=pending')
-        .then(res => setPendingCount(res.data.count || 0))
-        .catch(() => {})
-    }
-  }, [isAdmin])
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -76,7 +65,6 @@ export default function Layout() {
               <div className="nav-section-label" style={{ marginTop: 16 }}>Admin</div>
               <NavLink to="/admin" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
                 <span className="nav-icon">{Icons.shield}</span>Admin Panel
-                {pendingCount > 0 && <span className="nav-badge">{pendingCount}</span>}
               </NavLink>
             </>
           )}
@@ -119,9 +107,8 @@ export default function Layout() {
           {Icons.door}<span>Rooms</span>
         </NavLink>
         {isAdmin && (
-          <NavLink to="/admin" className={navItem} style={{ position: 'relative' }}>
+          <NavLink to="/admin" className={navItem}>
             {Icons.shield}<span>Admin</span>
-            {pendingCount > 0 && <span className="bottom-nav-badge" />}
           </NavLink>
         )}
         <button className="bottom-nav-item" onClick={handleLogout}>
