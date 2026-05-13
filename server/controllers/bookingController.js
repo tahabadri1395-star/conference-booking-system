@@ -1,64 +1,66 @@
-// controllers/bookingController.js
-const { db, uuidv4, parseBooking, parseRoom } = require('../models/db');
+const { pool, uuidv4, parseBooking, parseRoom } = require('../models/db');
 
-function hasConflict(roomId, date, startTime, endTime, excludeId = null) {
-  const row = db.prepare(`
+async function hasConflict(roomId, date, startTime, endTime, excludeId = null) {
+  const { rows } = await pool.query(`
     SELECT 1 FROM bookings
-    WHERE room_id = ? AND date = ? AND status != 'rejected'
-      AND id != ? AND start_time < ? AND end_time > ?
-  `).get(roomId, date, excludeId || '', endTime, startTime);
-  return !!row;
+    WHERE room_id = $1 AND date = $2 AND status != 'rejected'
+      AND id != $3 AND start_time < $4 AND end_time > $5
+  `, [roomId, date, excludeId || '', endTime, startTime]);
+  return rows.length > 0;
 }
 
-exports.getAllBookings = (req, res) => {
+exports.getAllBookings = async (req, res) => {
   try {
     const { status, roomId, date, email } = req.query;
     const isAdmin = req.user?.role === 'admin';
-    let query = 'SELECT * FROM bookings WHERE 1=1';
     const params = [];
-    if (status) { query += ' AND status = ?'; params.push(status); }
-    if (roomId) { query += ' AND room_id = ?'; params.push(roomId); }
-    if (date)   { query += ' AND date = ?';    params.push(date); }
-    // Public or admin: show all bookings; filter by email only if admin explicitly requests it
-    if (email && isAdmin) {
-      query += ' AND email = ?'; params.push(email);
+    let where = 'WHERE 1=1';
+
+    if (status)          { params.push(status);  where += ` AND status = $${params.length}`; }
+    if (roomId)          { params.push(roomId);  where += ` AND room_id = $${params.length}`; }
+    if (date)            { params.push(date);    where += ` AND date = $${params.length}`; }
+    if (email && isAdmin){ params.push(email);   where += ` AND email = $${params.length}`; }
+
+    const { rows } = await pool.query(`SELECT * FROM bookings ${where} ORDER BY created_at DESC`, params);
+
+    const roomIds = [...new Set(rows.map(r => r.room_id))];
+    const rooms = {};
+    for (const id of roomIds) {
+      const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [id]);
+      if (rr[0]) rooms[id] = parseRoom(rr[0]);
     }
-    query += ' ORDER BY created_at DESC';
 
-    const rows = db.prepare(query).all(...params).map(parseBooking).map(b => ({
-      ...b,
-      room: parseRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(b.roomId)),
-    }));
-
-    res.json({ success: true, data: rows, count: rows.length });
+    const data = rows.map(r => ({ ...parseBooking(r), room: rooms[r.room_id] || null }));
+    res.json({ success: true, data, count: data.length });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
-exports.getBookingById = (req, res) => {
+exports.getBookingById = async (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
-    if (!row) return res.status(404).json({ success: false, message: 'Booking not found' });
-    const booking = parseBooking(row);
-    res.json({ success: true, data: { ...booking, room: parseRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(booking.roomId)) } });
+    const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ success: false, message: 'Booking not found' });
+    const booking = parseBooking(rows[0]);
+    const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [booking.roomId]);
+    res.json({ success: true, data: { ...booking, room: parseRoom(rr[0]) } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
-exports.createBooking = (req, res) => {
+exports.createBooking = async (req, res) => {
   try {
     const { name, email, roomId, date, startTime, endTime, purpose, attendees } = req.body;
 
     if (!name || !email || !roomId || !date || !startTime || !endTime || !purpose || !attendees)
       return res.status(400).json({ success: false, message: 'All fields are required' });
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email))
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       return res.status(400).json({ success: false, message: 'Invalid email format' });
 
-    const room = parseRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(roomId));
+    const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [roomId]);
+    const room = parseRoom(rr[0]);
     if (!room) return res.status(404).json({ success: false, message: 'Room not found' });
 
     const today = new Date().toISOString().split('T')[0];
@@ -70,75 +72,82 @@ exports.createBooking = (req, res) => {
     if (toMin(endTime) - toMin(startTime) < 30)
       return res.status(400).json({ success: false, message: 'Minimum booking duration is 30 minutes' });
 
-    if (hasConflict(roomId, date, startTime, endTime))
+    if (await hasConflict(roomId, date, startTime, endTime))
       return res.status(409).json({ success: false, message: `Time slot conflict: ${room.name} is already booked for this time` });
 
     const id = uuidv4();
-    db.prepare(`
+    await pool.query(`
       INSERT INTO bookings (id, name, email, room_id, date, start_time, end_time, purpose, attendees, status, admin_remarks, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', '', ?)
-    `).run(id, name.trim(), email.trim().toLowerCase(), roomId, date, startTime, endTime, purpose.trim(), parseInt(attendees, 10), new Date().toISOString());
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'pending', '', $10)
+    `, [id, name.trim(), email.trim().toLowerCase(), roomId, date, startTime, endTime, purpose.trim(), parseInt(attendees, 10), new Date().toISOString()]);
 
-    const booking = parseBooking(db.prepare('SELECT * FROM bookings WHERE id = ?').get(id));
-    res.status(201).json({ success: true, message: 'Booking request submitted successfully', data: { ...booking, room } });
+    const { rows: br } = await pool.query('SELECT * FROM bookings WHERE id = $1', [id]);
+    res.status(201).json({ success: true, message: 'Booking request submitted successfully', data: { ...parseBooking(br[0]), room } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
-exports.updateBooking = (req, res) => {
+exports.updateBooking = async (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
+    const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
+    const row = rows[0];
     if (!row) return res.status(404).json({ success: false, message: 'Booking not found' });
 
     const { status, adminRemarks } = req.body;
     if (!['approved', 'rejected', 'pending'].includes(status))
       return res.status(400).json({ success: false, message: 'Invalid status' });
 
-    if (status === 'approved' && hasConflict(row.room_id, row.date, row.start_time, row.end_time, row.id))
+    if (status === 'approved' && await hasConflict(row.room_id, row.date, row.start_time, row.end_time, row.id))
       return res.status(409).json({ success: false, message: 'Cannot approve: another approved booking conflicts with this time slot' });
 
-    db.prepare('UPDATE bookings SET status = ?, admin_remarks = ?, updated_at = ? WHERE id = ?')
-      .run(status, adminRemarks || '', new Date().toISOString(), row.id);
+    await pool.query(
+      'UPDATE bookings SET status = $1, admin_remarks = $2, updated_at = $3 WHERE id = $4',
+      [status, adminRemarks || '', new Date().toISOString(), row.id]
+    );
 
-    const updated = parseBooking(db.prepare('SELECT * FROM bookings WHERE id = ?').get(row.id));
-    res.json({ success: true, message: `Booking ${status} successfully`, data: { ...updated, room: parseRoom(db.prepare('SELECT * FROM rooms WHERE id = ?').get(updated.roomId)) } });
+    const { rows: updated } = await pool.query('SELECT * FROM bookings WHERE id = $1', [row.id]);
+    const booking = parseBooking(updated[0]);
+    const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [booking.roomId]);
+    res.json({ success: true, message: `Booking ${status} successfully`, data: { ...booking, room: parseRoom(rr[0]) } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
-exports.deleteBooking = (req, res) => {
+exports.deleteBooking = async (req, res) => {
   try {
-    const row = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.id);
-    if (!row) return res.status(404).json({ success: false, message: 'Booking not found' });
-    db.prepare('DELETE FROM bookings WHERE id = ?').run(row.id);
-    res.json({ success: true, message: 'Booking deleted successfully', data: parseBooking(row) });
+    const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ success: false, message: 'Booking not found' });
+    await pool.query('DELETE FROM bookings WHERE id = $1', [rows[0].id]);
+    res.json({ success: true, message: 'Booking deleted successfully', data: parseBooking(rows[0]) });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
-exports.getStats = (req, res) => {
+exports.getStats = async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];
-    const { total, pending, approved, rejected } = db.prepare(`
+    const { rows: s } = await pool.query(`
       SELECT
-        COUNT(*) as total,
-        SUM(status = 'pending')  as pending,
-        SUM(status = 'approved') as approved,
-        SUM(status = 'rejected') as rejected
+        COUNT(*) AS total,
+        COUNT(*) FILTER (WHERE status = 'pending')  AS pending,
+        COUNT(*) FILTER (WHERE status = 'approved') AS approved,
+        COUNT(*) FILTER (WHERE status = 'rejected') AS rejected
       FROM bookings
-    `).get();
-    const todayBookings = db.prepare("SELECT COUNT(*) as n FROM bookings WHERE date = ?").get(today).n;
+    `);
+    const { rows: td } = await pool.query('SELECT COUNT(*) AS n FROM bookings WHERE date = $1', [today]);
 
-    const rooms = db.prepare('SELECT * FROM rooms').all().map(r => ({
-      ...parseRoom(r),
-      totalBookings:    db.prepare('SELECT COUNT(*) as n FROM bookings WHERE room_id = ?').get(r.id).n,
-      approvedBookings: db.prepare("SELECT COUNT(*) as n FROM bookings WHERE room_id = ? AND status = 'approved'").get(r.id).n,
+    const { rows: roomRows } = await pool.query('SELECT * FROM rooms');
+    const rooms = await Promise.all(roomRows.map(async (r) => {
+      const { rows: total }    = await pool.query('SELECT COUNT(*) AS n FROM bookings WHERE room_id = $1', [r.id]);
+      const { rows: approved } = await pool.query("SELECT COUNT(*) AS n FROM bookings WHERE room_id = $1 AND status = 'approved'", [r.id]);
+      return { ...parseRoom(r), totalBookings: parseInt(total[0].n), approvedBookings: parseInt(approved[0].n) };
     }));
 
-    res.json({ success: true, data: { total, pending, approved, rejected, todayBookings, roomStats: rooms } });
+    const { total, pending, approved, rejected } = s[0];
+    res.json({ success: true, data: { total: parseInt(total), pending: parseInt(pending), approved: parseInt(approved), rejected: parseInt(rejected), todayBookings: parseInt(td[0].n), roomStats: rooms } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }

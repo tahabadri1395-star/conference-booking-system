@@ -1,7 +1,6 @@
-// controllers/authController.js
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { db, uuidv4 } = require('../models/db');
+const { pool } = require('../models/db');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES = '8h';
@@ -27,7 +26,7 @@ const signToken = (user) =>
 
 const safeUser = (row) => { const { password, ...u } = row; return u; };
 
-exports.login = (req, res) => {
+exports.login = async (req, res) => {
   try {
     const ip = req.ip || req.connection.remoteAddress;
     if (isRateLimited(ip))
@@ -37,7 +36,9 @@ exports.login = (req, res) => {
     if (!email || !password)
       return res.status(400).json({ success: false, message: 'Email and password required' });
 
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase().trim());
+    const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase().trim()]);
+    const user = rows[0];
+
     if (!user || !bcrypt.compareSync(password, user.password)) {
       recordFailure(ip);
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
@@ -54,8 +55,7 @@ exports.login = (req, res) => {
   }
 };
 
-
-exports.changePassword = (req, res) => {
+exports.changePassword = async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer '))
     return res.status(401).json({ success: false, message: 'Not authenticated' });
@@ -67,25 +67,27 @@ exports.changePassword = (req, res) => {
     if (newPassword.length < 6)
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
 
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.id);
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const user = rows[0];
     if (!user) return res.status(401).json({ success: false, message: 'User not found' });
     if (!bcrypt.compareSync(currentPassword, user.password))
       return res.status(400).json({ success: false, message: 'Current password is incorrect' });
 
-    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), user.id);
+    await pool.query('UPDATE users SET password = $1 WHERE id = $2', [bcrypt.hashSync(newPassword, 10), user.id]);
     res.json({ success: true, message: 'Password updated successfully' });
   } catch {
     res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
 
-exports.me = (req, res) => {
+exports.me = async (req, res) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer '))
     return res.status(401).json({ success: false, message: 'Not authenticated' });
   try {
     const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.id);
+    const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const user = rows[0];
     if (!user) return res.status(401).json({ success: false, message: 'User not found' });
     res.json({ success: true, data: { user: safeUser(user) } });
   } catch {

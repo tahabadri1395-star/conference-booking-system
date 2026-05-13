@@ -10,7 +10,7 @@ client/dist/
 server/.env
 .env
 
-# SQLite (auto-created + seeded on startup)
+# SQLite (local dev only — production uses Supabase)
 server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal

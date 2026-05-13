@@ -10,6 +10,8 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 
+const { initDb } = require('./models/db');
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 const isProd = process.env.NODE_ENV === 'production';
@@ -63,8 +65,15 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n🚀 Gatherly server running on port ${PORT}\n`);
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`\n🚀 Gatherly server running on port ${PORT}\n`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialise database:', err);
+    process.exit(1);
+  });
 
 module.exports = app;
