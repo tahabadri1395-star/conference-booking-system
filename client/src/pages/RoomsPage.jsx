@@ -93,10 +93,10 @@ export default function RoomsPage() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="rooms-page-grid" style={{ display: 'grid', gridTemplateColumns: '240px 1fr', gap: 20, alignItems: 'start' }}>
 
         {/* Room list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div className="rooms-list-mobile" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {loading
             ? Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="skeleton" style={{ height: 80, borderRadius: 10 }} />

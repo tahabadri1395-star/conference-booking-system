@@ -71,7 +71,7 @@ export default function MyRequestsPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
         <div className="filters-bar" style={{ margin: 0 }}>
           {['all', 'pending', 'approved', 'rejected'].map(f => (
             <button key={f} className={`filter-btn${filter === f ? ' active' : ''}`} onClick={() => setFilter(f)}>
@@ -80,9 +80,9 @@ export default function MyRequestsPage() {
             </button>
           ))}
         </div>
-        <div className="search-wrap" style={{ marginLeft: 'auto' }}>
+        <div className="search-wrap">
           <svg className="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-          <input className="form-input search-input" style={{ width: 220 }} placeholder="Search bookings…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="form-input search-input" style={{ width: '100%' }} placeholder="Search bookings…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
       </div>
 

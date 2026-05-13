@@ -609,21 +609,59 @@ tbody td strong { color: var(--text); font-weight: 500; }
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
   .sidebar { display: none; }
-  .main-content { margin-left: 0; padding-bottom: 62px; }
+  .main-content { margin-left: 0; padding-bottom: 70px; }
   .page { padding: 16px 14px; }
-  .form-row { grid-template-columns: 1fr; }
-  .stats-grid { grid-template-columns: 1fr 1fr; }
   .bottom-nav { display: flex; }
 
-  /* Book room page: stack form + schedule vertically */
-  .book-room-grid { grid-template-columns: 1fr !important; }
+  /* Forms */
+  .form-row { grid-template-columns: 1fr; }
+  .form-input, .form-select, .form-textarea { font-size: 1rem; padding: 12px 14px; }
 
-  /* Page header: stack title and action button */
-  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .page-title { font-size: 1.4rem; }
+  /* Stats */
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { padding: 14px 16px; }
+  .stat-value { font-size: 1.8rem !important; }
 
-  /* Tables: card layout on mobile */
-  .table-wrap { border: none; }
+  /* Page header */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 20px; }
+  .page-title { font-size: 1.5rem; }
+  .page-header .btn { width: 100%; justify-content: center; }
+
+  /* Cards */
+  .card { padding: 16px; }
+
+  /* Grids stack vertically */
+  .book-room-grid  { grid-template-columns: 1fr !important; }
+  .rooms-page-grid { grid-template-columns: 1fr !important; }
+
+  /* Rooms page: horizontal room picker on mobile */
+  .rooms-list-mobile {
+    display: flex !important;
+    flex-direction: row !important;
+    overflow-x: auto !important;
+    gap: 10px !important;
+    padding-bottom: 4px !important;
+    scrollbar-width: none !important;
+  }
+  .rooms-list-mobile::-webkit-scrollbar { display: none; }
+  .rooms-list-mobile .room-card {
+    min-width: 160px !important;
+    flex-shrink: 0 !important;
+    padding: 12px !important;
+  }
+
+  /* Booking items: proper mobile card */
+  .booking-item {
+    flex-wrap: nowrap;
+    padding: 12px 14px;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .booking-time-block { min-width: 64px; padding: 8px 10px; }
+  .booking-time { font-size: 0.9rem; }
+
+  /* Tables: card layout */
+  .table-wrap { border: none; background: transparent; }
   table, thead, tbody, tr, th, td { display: block; }
   thead { display: none; }
   tbody tr {
@@ -640,6 +678,7 @@ tbody td strong { color: var(--text); font-weight: 500; }
     display: flex;
     align-items: center;
     gap: 8px;
+    min-height: 28px;
   }
   tbody td::before {
     content: attr(data-label);
@@ -652,25 +691,35 @@ tbody td strong { color: var(--text); font-weight: 500; }
     flex-shrink: 0;
   }
 
-  /* Modal: full-width on mobile */
-  .modal { padding: 20px 16px; }
-  .modal-actions { flex-direction: column-reverse; }
-  .modal-actions .btn { width: 100%; justify-content: center; }
+  /* Buttons: bigger touch targets */
+  .btn { min-height: 44px; }
+  .btn-sm { min-height: 36px; }
+  .filter-btn { min-height: 36px; padding: 6px 16px; }
 
-  /* Public header: hide nav text, show only icons/buttons */
+  /* Modal: slides up from bottom */
+  .modal-overlay { align-items: flex-end; padding: 0; }
+  .modal {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-width: 100%;
+    padding: 24px 20px 32px;
+    width: 100%;
+  }
+  .modal-actions { flex-direction: column-reverse; gap: 8px; }
+  .modal-actions .btn { width: 100%; justify-content: center; min-height: 48px; }
+
+  /* Public header */
   .public-nav-label { display: none; }
   .public-header-nav { gap: 4px !important; }
   .public-header-pad { padding: 0 14px !important; }
   .public-header-content-pad { padding: 0 14px !important; }
 
-  /* Booking items: compact */
-  .booking-item { flex-wrap: wrap; gap: 10px; }
-
-  /* Stat cards: smaller text */
-  .stat-value { font-size: 1.7rem !important; }
-
-  /* Login card full width */
+  /* Login */
   .login-card { max-width: 100%; }
+  .login-page { padding: 16px; align-items: flex-start; padding-top: 48px; }
+
+  /* Filters wrap nicely */
+  .filters-bar { gap: 6px; }
+  .search-wrap input { width: 100% !important; }
 }
 
 /* Notification dot */
