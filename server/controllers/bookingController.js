@@ -84,7 +84,7 @@ exports.createBooking = async (req, res) => {
 
     const { rows: br } = await pool.query('SELECT * FROM bookings WHERE id = $1', [id]);
     const booking = parseBooking(br[0]);
-    sendBookingEmails({ booking, room }).catch(() => {});
+    sendBookingEmails({ booking, room }).catch(err => console.error('[email error]', err.message));
     res.status(201).json({ success: true, message: 'Booking confirmed!', data: { ...booking, room } });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
