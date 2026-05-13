@@ -16,8 +16,9 @@ async function sendBookingEmails({ booking, room }) {
 
   const adminMail = {
     from: `"MeetingDesk" <${process.env.EMAIL_USER}>`,
+    replyTo: `"${booking.name}" <${booking.email}>`,
     to: adminTo,
-    subject: `📅 New Booking: ${room.name} on ${booking.date}`,
+    subject: `New Booking: ${room.name} on ${booking.date}`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f5f5ff;border-radius:12px">
         <h2 style="color:#4e3dc8;margin-bottom:4px">New Room Booking</h2>
@@ -44,7 +45,7 @@ async function sendBookingEmails({ booking, room }) {
   const userMail = {
     from: `"MeetingDesk" <${process.env.EMAIL_USER}>`,
     to: booking.email,
-    subject: `✅ Booking Confirmed – ${room.name}`,
+    subject: `Booking Confirmed – ${room.name}`,
     html: `
       <div style="font-family:sans-serif;max-width:520px;margin:0 auto;padding:24px;background:#f5f5ff;border-radius:12px">
         <h2 style="color:#4e3dc8;margin-bottom:4px">Booking Confirmed!</h2>

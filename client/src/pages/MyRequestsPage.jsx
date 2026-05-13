@@ -92,7 +92,7 @@ export default function MyRequestsPage() {
         ))
       ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">📋</div>
+          <div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40,opacity:0.3}}><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
           <div className="empty-title">{search ? 'No matching bookings' : filter === 'all' ? "You haven't made any bookings yet" : `No ${filter} bookings`}</div>
           <div className="empty-text" style={{ marginBottom: 16 }}>
             {!search && filter === 'all' && 'Book your first conference room to get started.'}

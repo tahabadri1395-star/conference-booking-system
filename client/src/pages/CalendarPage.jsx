@@ -261,7 +261,7 @@ function MonthView({ monthGrid, currentDate, bookings, rooms, selectedDay, setSe
 
           {selectedBookings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div style={{ fontSize: '1.8rem', marginBottom: 8 }}>🟢</div>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--green)', margin: '0 auto 10px' }} />
               <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.875rem' }}>Fully available</p>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 12, width: '100%' }}
                 onClick={() => navigate('/book')}>

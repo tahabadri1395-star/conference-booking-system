@@ -150,7 +150,7 @@ export default function AdminPanelPage() {
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 10 }} />)
           ) : filtered.length === 0 ? (
-            <div className="empty-state"><div className="empty-icon">📋</div><div className="empty-title">No bookings found</div></div>
+            <div className="empty-state"><div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40,opacity:0.3}}><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div><div className="empty-title">No bookings found</div></div>
           ) : (
             filtered.map(b => (
               <div key={b.id} style={{

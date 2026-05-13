@@ -391,7 +391,7 @@ export default function RoomsPage() {
               </h3>
               {dayBookings.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>🟢</div>
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--green)', margin: '0 auto 10px' }} />
                   <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.9rem' }}>Room is fully available</p>
                   <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', marginTop: 4 }}>No bookings on this day. Book it now!</p>
                   <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={() => navigate('/book')}>

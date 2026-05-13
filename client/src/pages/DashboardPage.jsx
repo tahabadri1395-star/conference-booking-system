@@ -115,7 +115,7 @@ export default function DashboardPage() {
             ))
           ) : recent.length === 0 ? (
             <div className="empty-state" style={{ padding: '32px 0' }}>
-              <div className="empty-icon">📋</div>
+              <div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40,opacity:0.3}}><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
               <div className="empty-title">No bookings yet</div>
               <div className="empty-text">Your recent requests will appear here</div>
             </div>
