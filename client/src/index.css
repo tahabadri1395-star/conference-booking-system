@@ -555,13 +555,122 @@ tbody td strong { color: var(--text); font-weight: 500; }
 .skeleton { background: linear-gradient(90deg, var(--bg-3) 25%, var(--bg-4) 50%, var(--bg-3) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: var(--radius-sm); }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-/* Responsive */
+/* ── Bottom nav (mobile only) ───────────────────────────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 62px;
+  background: var(--bg-2);
+  border-top: 1px solid var(--border);
+  z-index: 200;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 4px;
+  box-shadow: 0 -4px 24px rgba(90,70,200,0.08);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-3);
+  text-decoration: none;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: all var(--transition);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  position: relative;
+  min-width: 52px;
+}
+
+.bottom-nav-item svg { width: 22px; height: 22px; }
+.bottom-nav-item.active { color: var(--accent); }
+.bottom-nav-item:hover { color: var(--text); }
+
+.bottom-nav-badge {
+  position: absolute;
+  top: 2px; right: 6px;
+  width: 8px; height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 2px solid var(--bg-2);
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
-  .main-content { margin-left: 0; }
-  .page { padding: 20px 16px; }
+  .sidebar { display: none; }
+  .main-content { margin-left: 0; padding-bottom: 62px; }
+  .page { padding: 16px 14px; }
   .form-row { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
+  .bottom-nav { display: flex; }
+
+  /* Book room page: stack form + schedule vertically */
+  .book-room-grid { grid-template-columns: 1fr !important; }
+
+  /* Page header: stack title and action button */
+  .page-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-title { font-size: 1.4rem; }
+
+  /* Tables: card layout on mobile */
+  .table-wrap { border: none; }
+  table, thead, tbody, tr, th, td { display: block; }
+  thead { display: none; }
+  tbody tr {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    padding: 12px 14px;
+  }
+  tbody td {
+    padding: 4px 0;
+    font-size: 0.82rem;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  tbody td::before {
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-3);
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+
+  /* Modal: full-width on mobile */
+  .modal { padding: 20px 16px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; justify-content: center; }
+
+  /* Public header: hide nav text, show only icons/buttons */
+  .public-nav-label { display: none; }
+  .public-header-nav { gap: 4px !important; }
+  .public-header-pad { padding: 0 14px !important; }
+  .public-header-content-pad { padding: 0 14px !important; }
+
+  /* Booking items: compact */
+  .booking-item { flex-wrap: wrap; gap: 10px; }
+
+  /* Stat cards: smaller text */
+  .stat-value { font-size: 1.7rem !important; }
+
+  /* Login card full width */
+  .login-card { max-width: 100%; }
 }
 
 /* Notification dot */

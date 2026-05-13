@@ -33,7 +33,7 @@ function PublicLayout({ children }) {
   const navigate = useNavigate()
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <header style={{
+      <header className="public-header-pad" style={{
         height: 56, background: 'var(--bg-2)', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 50,
@@ -49,27 +49,27 @@ function PublicLayout({ children }) {
           <span className="logo-text" style={{ fontSize: '1.05rem' }}>Meeting<span>Desk</span></span>
         </div>
 
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <nav className="public-header-nav" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <NavLink to="/book" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             style={{ padding: '6px 12px', borderRadius: 7 }}>
-            Book a Room
+            <span className="public-nav-label">Book a Room</span>
           </NavLink>
           <NavLink to="/rooms" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             style={{ padding: '6px 12px', borderRadius: 7 }}>
-            Schedule
+            <span className="public-nav-label">Schedule</span>
           </NavLink>
           {isAdmin
-            ? <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard')} style={{ marginLeft: 8 }}>
-                Admin Panel →
+            ? <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard')} style={{ marginLeft: 4 }}>
+                Admin →
               </button>
-            : <button className="btn btn-secondary btn-sm" onClick={() => navigate('/login')} style={{ marginLeft: 8 }}>
+            : <button className="btn btn-secondary btn-sm" onClick={() => navigate('/login')} style={{ marginLeft: 4 }}>
                 Sign In
               </button>
           }
         </nav>
       </header>
 
-      <div style={{ padding: '0 28px' }}>
+      <div className="public-header-content-pad" style={{ padding: '0 28px' }}>
         {children}
       </div>
     </div>

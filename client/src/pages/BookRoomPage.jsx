@@ -169,7 +169,7 @@ export default function BookRoomPage() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
+      <div className="book-room-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
 
         {/* ── LEFT: Form ─────────────────────────────────────────────────── */}
         <div className="card">
