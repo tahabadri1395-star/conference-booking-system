@@ -2,9 +2,13 @@
 const Database = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-const db = new Database(path.join(__dirname, '../data/gatherly.db'));
+const dataDir = path.join(__dirname, '../data');
+fs.mkdirSync(dataDir, { recursive: true });
+
+const db = new Database(path.join(dataDir, 'gatherly.db'));
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');

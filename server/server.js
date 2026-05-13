@@ -40,11 +40,10 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/rooms', require('./routes/rooms'));
-app.use('/api/users', require('./routes/users'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'Gatherly API is running', timestamp: new Date().toISOString() });
+  res.json({ success: true, message: 'MeetingDesk API is running', timestamp: new Date().toISOString() });
 });
 
 // Serve React frontend in production

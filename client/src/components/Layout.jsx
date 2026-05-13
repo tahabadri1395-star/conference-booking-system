@@ -50,17 +50,19 @@ export default function Layout() {
                 <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
               </svg>
             </div>
-            <span className="logo-text">Gather<span>ly</span></span>
+            <span className="logo-text">Meeting<span>Desk</span></span>
           </div>
         </div>
 
         <nav className="sidebar-nav">
           <div className="nav-section-label">Main</div>
 
-          <NavLink to="/dashboard" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-            <span className="nav-icon">{Icons.grid}</span>
-            Dashboard
-          </NavLink>
+          {isAdmin && (
+            <NavLink to="/dashboard" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <span className="nav-icon">{Icons.grid}</span>
+              Dashboard
+            </NavLink>
+          )}
 
           <NavLink to="/book" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
             <span className="nav-icon">{Icons.plus}</span>

@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
-import { format } from 'date-fns'
 
 const TIME_SLOTS = []
 for (let h = 7; h <= 21; h++) {
@@ -12,47 +11,16 @@ for (let h = 7; h <= 21; h++) {
   TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
 }
 
-function RoomCard({ room, selected, onSelect, checking }) {
-  const avail = room.available !== false
-  return (
-    <div
-      className={`room-card${selected ? ' selected' : ''}`}
-      style={{ '--room-color': room.color, opacity: checking ? 0.6 : 1, cursor: avail ? 'pointer' : 'default' }}
-      onClick={() => avail && onSelect(room)}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
-        <div className="room-card-name">{room.name}</div>
-        {room.available !== undefined && (
-          <span className={`badge ${avail ? 'badge-available' : 'badge-unavailable'}`}>
-            {avail ? 'Available' : 'Booked'}
-          </span>
-        )}
-      </div>
-      <div className="room-card-floor">{room.floor}</div>
-      <div className="room-card-amenities">
-        {room.amenities?.slice(0, 4).map(a => (
-          <span key={a} className="amenity-tag">{a}</span>
-        ))}
-        {room.amenities?.length > 4 && <span className="amenity-tag">+{room.amenities.length - 4}</span>}
-      </div>
-      {!avail && room.conflictingBooking && (
-        <div style={{ marginTop: 10, fontSize: '0.72rem', color: 'var(--red)', background: 'var(--red-bg)', padding: '6px 8px', borderRadius: 6 }}>
-          Booked {room.conflictingBooking.startTime}–{room.conflictingBooking.endTime}
-        </div>
-      )}
-    </div>
-  )
+const HOURS = Array.from({ length: 14 }, (_, i) => i + 7) // 7am–9pm
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+const minToLabel = m => {
+  const h = Math.floor(m / 60), min = m % 60, ampm = h >= 12 ? 'pm' : 'am'
+  return `${h > 12 ? h - 12 : h === 0 ? 12 : h}:${String(min).padStart(2, '0')}${ampm}`
 }
 
 export default function BookRoomPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [rooms, setRooms] = useState([])
-  const [step, setStep] = useState(1) // 1: form, 2: room select, 3: confirm
-  const [loading, setLoading] = useState(false)
-  const [checkingRooms, setCheckingRooms] = useState(false)
-  const [submitted, setSubmitted] = useState(null)
-
   const today = new Date().toISOString().split('T')[0]
 
   const [form, setForm] = useState({
@@ -66,100 +34,125 @@ export default function BookRoomPage() {
     roomId: '',
   })
   const [errors, setErrors] = useState({})
-  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [rooms, setRooms] = useState([])
+  const [allBookings, setAllBookings] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [submitted, setSubmitted] = useState(null)
 
-  const set = (k, v) => { setForm(f => ({ ...f, [k]: v })); setErrors(e => ({ ...e, [k]: '' })) }
+  const set = (k, v) => {
+    setForm(f => ({ ...f, [k]: v }))
+    setErrors(e => ({ ...e, [k]: '' }))
+  }
 
-  // Fetch rooms with availability when date/time changes
+  // Load all rooms + all bookings once
   useEffect(() => {
-    if (step === 2 && form.date && form.startTime && form.endTime) {
-      setCheckingRooms(true)
-      api.get(`/rooms?date=${form.date}&startTime=${form.startTime}&endTime=${form.endTime}`)
-        .then(r => setRooms(r.data.data))
-        .catch(() => toast.error('Failed to load rooms'))
-        .finally(() => setCheckingRooms(false))
-    }
-  }, [step, form.date, form.startTime, form.endTime])
+    Promise.all([api.get('/rooms'), api.get('/bookings')])
+      .then(([rRes, bRes]) => {
+        const rs = rRes.data.data
+        setRooms(rs)
+        setAllBookings(bRes.data.data)
+        if (rs.length && !form.roomId) setForm(f => ({ ...f, roomId: rs[0].id }))
+      })
+      .catch(() => toast.error('Failed to load rooms'))
+  }, [])
 
-  const validateStep1 = () => {
+  const selectedRoom = rooms.find(r => r.id === form.roomId)
+
+  // Bookings for the selected room on the selected date
+  const dayBookings = allBookings.filter(
+    b => b.roomId === form.roomId && b.date === form.date && b.status !== 'rejected'
+  ).sort((a, b) => a.startTime.localeCompare(b.startTime))
+
+  // Does the selected time window conflict with any existing booking?
+  const hasConflict = dayBookings.some(b => {
+    const s = toMin(b.startTime), e = toMin(b.endTime)
+    const fs = toMin(form.startTime), fe = toMin(form.endTime)
+    return fs < e && fe > s
+  })
+
+  const validate = () => {
     const e = {}
-    if (!form.name.trim()) e.name = 'Name is required'
-    if (!form.email.trim()) e.email = 'Email is required'
+    if (!form.name.trim())  e.name = 'Required'
+    if (!form.email.trim()) e.email = 'Required'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = 'Invalid email'
-    if (!form.date) e.date = 'Date is required'
+    if (!form.date)         e.date = 'Required'
     else if (form.date < today) e.date = 'Cannot book past dates'
-    if (!form.startTime) e.startTime = 'Required'
-    if (!form.endTime) e.endTime = 'Required'
+    if (!form.startTime)    e.startTime = 'Required'
+    if (!form.endTime)      e.endTime = 'Required'
     else {
-      const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
-      if (toMin(form.endTime) <= toMin(form.startTime)) e.endTime = 'End time must be after start time'
-      else if (toMin(form.endTime) - toMin(form.startTime) < 30) e.endTime = 'Minimum 30 minutes required'
+      if (toMin(form.endTime) <= toMin(form.startTime)) e.endTime = 'Must be after start'
+      else if (toMin(form.endTime) - toMin(form.startTime) < 30) e.endTime = 'Min 30 minutes'
     }
-    if (!form.purpose.trim()) e.purpose = 'Purpose is required'
-    if (!form.attendees) e.attendees = 'Required'
-    else if (isNaN(form.attendees) || parseInt(form.attendees) < 1) e.attendees = 'Must be at least 1'
+    if (!form.purpose.trim()) e.purpose = 'Required'
+    if (!form.attendees || isNaN(form.attendees) || parseInt(form.attendees) < 1) e.attendees = 'Min 1'
+    if (!form.roomId)       e.roomId = 'Select a room'
     setErrors(e)
     return Object.keys(e).length === 0
   }
 
-  const handleNext = () => {
-    if (validateStep1()) setStep(2)
-  }
-
-  const handleSelectRoom = (room) => {
-    setSelectedRoom(room)
-    setForm(f => ({ ...f, roomId: room.id }))
-    setStep(3)
-  }
-
   const handleSubmit = async () => {
+    if (!validate()) return
+    if (hasConflict) { toast.error('This time slot conflicts with an existing booking'); return }
     setLoading(true)
     try {
       const res = await api.post('/bookings', form)
       setSubmitted(res.data.data)
       toast.success('Booking request submitted!')
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to submit booking'
-      toast.error(msg)
-      if (err.response?.status === 409) setStep(2) // go back to room selection on conflict
+      toast.error(err.response?.data?.message || 'Failed to submit')
     } finally {
       setLoading(false)
     }
   }
 
+  // ── Schedule sidebar helpers ──────────────────────────────────────────────
+  const dayStart = 7 * 60
+  const totalMins = 14 * 60
+  const slotPct = (mins) => ((mins - dayStart) / totalMins) * 100
+
+  const previewStart = toMin(form.startTime)
+  const previewEnd   = toMin(form.endTime)
+  const previewValid = previewEnd > previewStart && previewEnd - previewStart >= 30
+
+  // ── Success state ─────────────────────────────────────────────────────────
   if (submitted) {
     return (
       <div className="page animate-in">
-        <div style={{ maxWidth: 520, margin: '60px auto', textAlign: 'center' }}>
-          <div style={{ fontSize: '4rem', marginBottom: 16 }}>🎉</div>
-          <h1 className="page-title" style={{ marginBottom: 8 }}>Request Submitted!</h1>
-          <p style={{ color: 'var(--text-3)', marginBottom: 32 }}>
-            Your booking is pending admin approval. You'll be notified once it's reviewed.
+        <div style={{ maxWidth: 480, margin: '60px auto', textAlign: 'center' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: 12 }}>🎉</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', fontWeight: 700, marginBottom: 8 }}>
+            Request Submitted!
+          </h1>
+          <p style={{ color: 'var(--text-3)', marginBottom: 28, fontSize: '0.9rem' }}>
+            Pending admin approval. You'll be notified once reviewed.
           </p>
-          <div className="card" style={{ textAlign: 'left', marginBottom: 24 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-              {[
-                ['Room', submitted.room?.name],
-                ['Date', submitted.date],
-                ['Time', `${submitted.startTime} – ${submitted.endTime}`],
-                ['Status', <span className="badge badge-pending">Pending</span>],
-                ['Name', submitted.name],
-                ['Attendees', `${submitted.attendees} people`],
-                ['Purpose', submitted.purpose],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)' }}>{value}</div>
-                </div>
-              ))}
+          <div className="card" style={{ textAlign: 'left', marginBottom: 20 }}>
+            {[
+              ['Room',      submitted.room?.name || selectedRoom?.name],
+              ['Date',      submitted.date],
+              ['Time',      `${submitted.startTime} – ${submitted.endTime}`],
+              ['Purpose',   submitted.purpose],
+              ['Attendees', `${submitted.attendees} people`],
+            ].map(([label, value]) => (
+              <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)', fontSize: '0.875rem' }}>
+                <span style={{ color: 'var(--text-3)' }}>{label}</span>
+                <span style={{ fontWeight: 500 }}>{value}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontSize: '0.875rem' }}>
+              <span style={{ color: 'var(--text-3)' }}>Status</span>
+              <span className="badge badge-pending">Pending</span>
             </div>
           </div>
           <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-            <button className="btn btn-secondary" onClick={() => { setSubmitted(null); setStep(1); setSelectedRoom(null); setForm(f => ({ ...f, purpose: '', roomId: '' })) }}>
-              Book Another
+            <button className="btn btn-primary" onClick={() => {
+              setSubmitted(null)
+              setForm(f => ({ ...f, purpose: '', attendees: '' }))
+            }}>
+              Book Another Room
             </button>
-            <button className="btn btn-primary" onClick={() => navigate('/my-requests')}>
-              View My Requests →
+            <button className="btn btn-secondary" onClick={() => navigate('/rooms')}>
+              View Schedule →
             </button>
           </div>
         </div>
@@ -172,157 +165,269 @@ export default function BookRoomPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Book a Room</h1>
-          <p className="page-subtitle">Fill in the details to request a conference room</p>
+          <p className="page-subtitle">Fill in the details and pick your time — see availability live on the right</p>
         </div>
       </div>
 
-      {/* Step indicator */}
-      <div style={{ display: 'flex', gap: 0, marginBottom: 32, background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
-        {[['1', 'Details'], ['2', 'Choose Room'], ['3', 'Confirm']].map(([num, label], i) => {
-          const s = i + 1
-          const active = step === s
-          const done = step > s
-          return (
-            <div key={num} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 7, background: active ? 'var(--bg-4)' : 'transparent', color: active ? 'var(--text)' : done ? 'var(--accent-2)' : 'var(--text-3)', fontSize: '0.82rem', fontWeight: active ? 600 : 400, transition: 'all 0.18s', cursor: done ? 'pointer' : 'default' }}
-              onClick={() => done && setStep(s)}>
-              <span style={{ width: 20, height: 20, borderRadius: '50%', background: active ? 'var(--accent)' : done ? 'var(--accent-glow)' : 'var(--bg-3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem', fontWeight: 700, color: active ? 'white' : done ? 'var(--accent-2)' : 'var(--text-3)', flexShrink: 0 }}>
-                {done ? '✓' : num}
-              </span>
-              {label}
-            </div>
-          )
-        })}
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
 
-      <div style={{ maxWidth: 640 }}>
-        {/* Step 1: Details */}
-        {step === 1 && (
-          <div className="card animate-in">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 600, marginBottom: 20 }}>Booking Details</h2>
+        {/* ── LEFT: Form ─────────────────────────────────────────────────── */}
+        <div className="card">
+
+          {/* Who */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>
+              Your Details
+            </div>
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Full Name <span>*</span></label>
+                <label className="form-label">Full Name *</label>
                 <input className="form-input" value={form.name} onChange={e => set('name', e.target.value)} placeholder="Your name" />
                 {errors.name && <span className="form-error">{errors.name}</span>}
               </div>
               <div className="form-group">
-                <label className="form-label">Email <span>*</span></label>
+                <label className="form-label">Email *</label>
                 <input className="form-input" type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="you@example.com" />
                 {errors.email && <span className="form-error">{errors.email}</span>}
               </div>
             </div>
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Date <span>*</span></label>
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 20 }} />
+
+          {/* When */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>
+              When
+            </div>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label className="form-label">Date *</label>
               <input className="form-input" type="date" value={form.date} min={today} onChange={e => set('date', e.target.value)} />
               {errors.date && <span className="form-error">{errors.date}</span>}
             </div>
-
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Start Time <span>*</span></label>
+                <label className="form-label">Start Time *</label>
                 <select className="form-select" value={form.startTime} onChange={e => set('startTime', e.target.value)}>
                   {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 {errors.startTime && <span className="form-error">{errors.startTime}</span>}
               </div>
               <div className="form-group">
-                <label className="form-label">End Time <span>*</span></label>
+                <label className="form-label">End Time *</label>
                 <select className="form-select" value={form.endTime} onChange={e => set('endTime', e.target.value)}>
                   {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 {errors.endTime && <span className="form-error">{errors.endTime}</span>}
               </div>
             </div>
+            {hasConflict && (
+              <div style={{ background: 'var(--red-bg)', border: '1px solid rgba(220,38,38,0.2)', borderRadius: 8, padding: '8px 12px', fontSize: '0.8rem', color: 'var(--red)', marginTop: 4 }}>
+                ⚠ This time slot conflicts with an existing booking — pick a different time or room.
+              </div>
+            )}
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">Meeting Purpose <span>*</span></label>
-              <textarea className="form-textarea" value={form.purpose} onChange={e => set('purpose', e.target.value)} placeholder="e.g. Q3 Planning Session, Team Standup, Client Presentation…" rows={3} />
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 20 }} />
+
+          {/* What */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>
+              Meeting Info
+            </div>
+            <div className="form-group" style={{ marginBottom: 12 }}>
+              <label className="form-label">Purpose *</label>
+              <textarea className="form-textarea" rows={2} value={form.purpose} onChange={e => set('purpose', e.target.value)} placeholder="e.g. Team standup, client presentation…" />
               {errors.purpose && <span className="form-error">{errors.purpose}</span>}
             </div>
-
             <div className="form-group">
-              <label className="form-label">Number of Attendees <span>*</span></label>
-              <input className="form-input" type="number" min="1" value={form.attendees} onChange={e => set('attendees', e.target.value)} placeholder="How many people will attend?" />
+              <label className="form-label">Attendees *</label>
+              <input className="form-input" type="number" min="1" value={form.attendees} onChange={e => set('attendees', e.target.value)} placeholder="Number of people" style={{ maxWidth: 160 }} />
               {errors.attendees && <span className="form-error">{errors.attendees}</span>}
             </div>
+          </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 8 }}>
-              <button className="btn btn-primary" onClick={handleNext}>
-                Choose Room →
-              </button>
+          <div style={{ height: 1, background: 'var(--border)', marginBottom: 20 }} />
+
+          {/* Room picker */}
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-3)', marginBottom: 12 }}>
+              Room
+            </div>
+            {errors.roomId && <div className="form-error" style={{ marginBottom: 8 }}>{errors.roomId}</div>}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {rooms.map(r => {
+                const isSelected = form.roomId === r.id
+                const roomConflict = allBookings.some(b =>
+                  b.roomId === r.id && b.date === form.date && b.status !== 'rejected' &&
+                  toMin(form.startTime) < toMin(b.endTime) && toMin(form.endTime) > toMin(b.startTime)
+                )
+                return (
+                  <div
+                    key={r.id}
+                    onClick={() => !roomConflict && set('roomId', r.id)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '12px 14px', borderRadius: 10,
+                      border: `1.5px solid ${isSelected ? 'var(--accent)' : roomConflict ? 'rgba(220,38,38,0.2)' : 'var(--border)'}`,
+                      background: isSelected ? 'var(--accent-glow)' : roomConflict ? 'var(--red-bg)' : 'var(--bg-3)',
+                      cursor: roomConflict ? 'not-allowed' : 'pointer',
+                      opacity: roomConflict ? 0.7 : 1,
+                      transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: r.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{r.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{r.floor}</div>
+                    </div>
+                    {roomConflict
+                      ? <span className="badge badge-unavailable" style={{ fontSize: '0.65rem' }}>Conflict</span>
+                      : isSelected
+                        ? <span style={{ fontSize: '0.72rem', color: 'var(--accent)', fontWeight: 600 }}>✓ Selected</span>
+                        : <span className="badge badge-available" style={{ fontSize: '0.65rem' }}>Available</span>
+                    }
+                  </div>
+                )
+              })}
             </div>
           </div>
-        )}
 
-        {/* Step 2: Room Selection */}
-        {step === 2 && (
-          <div className="animate-in">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 600 }}>Select a Room</h2>
-                <p style={{ fontSize: '0.82rem', color: 'var(--text-3)', marginTop: 2 }}>
-                  Availability checked for {form.date} · {form.startTime}–{form.endTime}
-                </p>
+          {/* Submit */}
+          <button
+            className="btn btn-primary btn-lg"
+            style={{ width: '100%' }}
+            onClick={handleSubmit}
+            disabled={loading || hasConflict}
+          >
+            {loading ? 'Submitting…' : 'Submit Booking Request'}
+          </button>
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-3)', textAlign: 'center', marginTop: 8 }}>
+            Your request will be pending until an admin approves it.
+          </p>
+        </div>
+
+        {/* ── RIGHT: Day schedule ────────────────────────────────────────── */}
+        <div style={{ position: 'sticky', top: 24 }}>
+          <div className="card" style={{ padding: '18px 16px' }}>
+
+            {/* Header */}
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', fontWeight: 600 }}>
+                {selectedRoom ? selectedRoom.name : 'Select a room'}
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => setStep(1)}>← Back</button>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 2 }}>
+                {form.date
+                  ? new Date(form.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+                  : 'Pick a date'}
+              </div>
             </div>
-            <div className="rooms-grid">
-              {checkingRooms
-                ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="skeleton" style={{ height: 180, borderRadius: 14 }} />)
-                : rooms.map(r => (
-                  <RoomCard key={r.id} room={r} selected={selectedRoom?.id === r.id} onSelect={handleSelectRoom} checking={checkingRooms} />
-                ))
+
+            {/* Status pills */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {dayBookings.length === 0
+                ? <span style={{ fontSize: '0.7rem', color: 'var(--green)', background: 'var(--green-bg)', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>Fully free today</span>
+                : <>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--red)', background: 'var(--red-bg)', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>{dayBookings.length} booked</span>
+                    {!hasConflict && previewValid && <span style={{ fontSize: '0.7rem', color: 'var(--accent-2)', background: 'var(--accent-glow)', padding: '3px 10px', borderRadius: 20, fontWeight: 500 }}>Your slot is free ✓</span>}
+                    {hasConflict && <span style={{ fontSize: '0.7rem', color: 'var(--red)', background: 'var(--red-bg)', padding: '3px 10px', borderRadius: 20, fontWeight: 600 }}>Conflict ✗</span>}
+                  </>
               }
             </div>
-          </div>
-        )}
 
-        {/* Step 3: Confirm */}
-        {step === 3 && selectedRoom && (
-          <div className="card animate-in">
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', fontWeight: 600, marginBottom: 4 }}>Confirm Booking</h2>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: 24 }}>Review your booking details before submitting</p>
-
-            <div style={{ background: 'var(--bg-3)', borderRadius: 10, padding: 20, marginBottom: 24 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
-                <div style={{ width: 44, height: 44, borderRadius: 10, background: selectedRoom.color + '22', border: `2px solid ${selectedRoom.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.3rem' }}>🚪</div>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', fontWeight: 600 }}>{selectedRoom.name}</div>
-                  <div style={{ fontSize: '0.78rem', color: 'var(--text-3)' }}>{selectedRoom.floor} · Up to {selectedRoom.capacity} people</div>
-                </div>
-                <span className="badge badge-available" style={{ marginLeft: 'auto' }}>Available</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                {[
-                  ['Date', form.date],
-                  ['Time', `${form.startTime} – ${form.endTime}`],
-                  ['Booked by', form.name],
-                  ['Email', form.email],
-                  ['Attendees', `${form.attendees} people`],
-                  ['Purpose', form.purpose],
-                ].map(([label, value]) => (
-                  <div key={label} style={{ gridColumn: label === 'Purpose' ? '1/-1' : undefined }}>
-                    <div style={{ fontSize: '0.7rem', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>{label}</div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)' }}>{value}</div>
+            {/* Timeline */}
+            <div style={{ display: 'flex', gap: 0 }}>
+              {/* Hour labels */}
+              <div style={{ width: 36, flexShrink: 0, position: 'relative', height: HOURS.length * 44 }}>
+                {HOURS.map((h, i) => (
+                  <div key={h} style={{ position: 'absolute', top: i * 44 - 6, right: 6, fontSize: '0.6rem', color: 'var(--text-3)', lineHeight: 1, textAlign: 'right' }}>
+                    {h > 12 ? h - 12 : h}{h >= 12 ? 'p' : 'a'}
                   </div>
                 ))}
               </div>
+
+              {/* Grid */}
+              <div style={{ flex: 1, position: 'relative', height: HOURS.length * 44 }}>
+                {/* Hour lines */}
+                {HOURS.map((_, i) => (
+                  <div key={i} style={{ position: 'absolute', top: i * 44, left: 0, right: 0, height: 1, background: 'var(--border)' }} />
+                ))}
+
+                {/* Existing bookings */}
+                {dayBookings.map(b => {
+                  const top = slotPct(toMin(b.startTime))
+                  const height = slotPct(toMin(b.endTime)) - top
+                  const approved = b.status === 'approved'
+                  return (
+                    <div key={b.id} style={{
+                      position: 'absolute', left: 2, right: 2,
+                      top: `${top}%`, height: `${height}%`,
+                      background: approved ? 'var(--accent-glow)' : 'var(--yellow-bg)',
+                      border: `1.5px solid ${approved ? 'var(--accent)' : 'rgba(217,119,6,0.4)'}`,
+                      borderRadius: 6, padding: '3px 6px', overflow: 'hidden',
+                    }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: approved ? 'var(--accent-2)' : 'var(--yellow)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.startTime}–{b.endTime}
+                      </div>
+                      <div style={{ fontSize: '0.6rem', color: 'var(--text-2)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.purpose}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {/* Your selected slot preview */}
+                {previewValid && (() => {
+                  const top = slotPct(previewStart)
+                  const height = slotPct(previewEnd) - top
+                  return (
+                    <div style={{
+                      position: 'absolute', left: 2, right: 2,
+                      top: `${top}%`, height: `${height}%`,
+                      background: hasConflict ? 'var(--red-bg)' : 'rgba(124,106,247,0.15)',
+                      border: `2px dashed ${hasConflict ? 'var(--red)' : 'var(--accent)'}`,
+                      borderRadius: 6, padding: '3px 6px', overflow: 'hidden', zIndex: 5,
+                    }}>
+                      <div style={{ fontSize: '0.62rem', fontWeight: 700, color: hasConflict ? 'var(--red)' : 'var(--accent)', lineHeight: 1.2 }}>
+                        {hasConflict ? '✗ Conflict' : '✓ Your slot'}
+                      </div>
+                      <div style={{ fontSize: '0.6rem', color: hasConflict ? 'var(--red)' : 'var(--accent-2)', opacity: 0.8 }}>
+                        {form.startTime}–{form.endTime}
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Now line */}
+                {form.date === today && (() => {
+                  const now = new Date()
+                  const pct = slotPct(now.getHours() * 60 + now.getMinutes())
+                  if (pct < 0 || pct > 100) return null
+                  return (
+                    <div style={{ position: 'absolute', left: 0, right: 0, top: `${pct}%`, zIndex: 10, pointerEvents: 'none' }}>
+                      <div style={{ position: 'absolute', left: -4, top: -4, width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />
+                      <div style={{ height: 2, background: 'var(--accent)', marginLeft: 4 }} />
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
 
-            <div style={{ background: 'var(--yellow-bg)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: '0.8rem', color: 'var(--yellow)', marginBottom: 24 }}>
-              ⏳ Your request will be pending until an admin approves it.
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'space-between' }}>
-              <button className="btn btn-ghost" onClick={() => setStep(2)}>← Change Room</button>
-              <button className="btn btn-primary btn-lg" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Submitting…' : 'Submit Request ✓'}
-              </button>
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap' }}>
+              {[
+                { color: 'var(--accent-glow)', border: 'var(--accent)', label: 'Approved' },
+                { color: 'var(--yellow-bg)', border: 'rgba(217,119,6,0.4)', label: 'Pending' },
+                { color: 'rgba(124,106,247,0.15)', border: 'var(--accent)', dashed: true, label: 'Your slot' },
+              ].map(({ color, border, dashed, label }) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: 2, background: color, border: `1.5px ${dashed ? 'dashed' : 'solid'} ${border}` }} />
+                  <span style={{ fontSize: '0.65rem', color: 'var(--text-3)' }}>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )

@@ -55,8 +55,55 @@ function ActionModal({ booking, onClose, onConfirm }) {
   )
 }
 
+function ChangePasswordForm() {
+  const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirm: '' })
+  const [loading, setLoading] = useState(false)
+
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }))
+
+  const handle = async (e) => {
+    e.preventDefault()
+    if (form.newPassword !== form.confirm)
+      return toast.error('New passwords do not match')
+    setLoading(true)
+    try {
+      await api.put('/auth/password', { currentPassword: form.currentPassword, newPassword: form.newPassword })
+      toast.success('Password updated successfully')
+      setForm({ currentPassword: '', newPassword: '', confirm: '' })
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 420 }}>
+      <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 4 }}>Change Password</h2>
+      <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: 20 }}>Update your admin account password.</p>
+      <form onSubmit={handle} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div className="form-group">
+          <label className="form-label">Current Password</label>
+          <input type="password" className="form-input" value={form.currentPassword} onChange={set('currentPassword')} required autoComplete="current-password" />
+        </div>
+        <div className="form-group">
+          <label className="form-label">New Password</label>
+          <input type="password" className="form-input" value={form.newPassword} onChange={set('newPassword')} required autoComplete="new-password" minLength={6} />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Confirm New Password</label>
+          <input type="password" className="form-input" value={form.confirm} onChange={set('confirm')} required autoComplete="new-password" minLength={6} />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={loading} style={{ alignSelf: 'flex-start' }}>
+          {loading ? 'Updating…' : 'Update Password'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 export default function AdminPanelPage() {
-  const [tab, setTab] = useState('bookings') // 'bookings' | 'users'
+  const [tab, setTab] = useState('bookings') // 'bookings' | 'settings'
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
@@ -65,20 +112,6 @@ export default function AdminPanelPage() {
   const [roomFilter, setRoomFilter] = useState('')
   const [rooms, setRooms] = useState([])
   const [modal, setModal] = useState(null)
-  const [pendingUsers, setPendingUsers] = useState([])
-  const [usersLoading, setUsersLoading] = useState(false)
-
-  const loadUsers = useCallback(async () => {
-    setUsersLoading(true)
-    try {
-      const res = await api.get('/users/pending')
-      setPendingUsers(res.data.data)
-    } catch {
-      toast.error('Failed to load pending users')
-    } finally {
-      setUsersLoading(false)
-    }
-  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -93,28 +126,7 @@ export default function AdminPanelPage() {
     }
   }, [])
 
-  const handleApproveUser = async (id) => {
-    try {
-      await api.patch(`/users/${id}/approve`)
-      toast.success('User approved')
-      loadUsers()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to approve')
-    }
-  }
-
-  const handleRejectUser = async (id, name) => {
-    if (!window.confirm(`Reject and remove ${name}'s registration?`)) return
-    try {
-      await api.delete(`/users/${id}`)
-      toast.success('Registration rejected')
-      loadUsers()
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to reject')
-    }
-  }
-
-  useEffect(() => { load(); loadUsers() }, [load, loadUsers])
+  useEffect(() => { load() }, [load])
 
   const handleAction = async (id, status, adminRemarks) => {
     try {
@@ -176,9 +188,9 @@ export default function AdminPanelPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Admin Panel</h1>
-          <p className="page-subtitle">Manage bookings and user registrations</p>
+          <p className="page-subtitle">Manage bookings</p>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={() => { load(); loadUsers() }}>
+        <button className="btn btn-secondary btn-sm" onClick={() => load()}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14 }}><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
           Refresh
         </button>
@@ -187,8 +199,8 @@ export default function AdminPanelPage() {
       {/* Tab switcher */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
         {[
-          { key: 'bookings', label: 'Bookings', count: counts.pending },
-          { key: 'users',    label: 'User Approvals', count: pendingUsers.length },
+          { key: 'bookings',  label: 'Bookings', count: counts.pending },
+          { key: 'settings', label: 'Settings', count: 0 },
         ].map(({ key, label, count }) => (
           <button key={key} type="button" onClick={() => setTab(key)}
             style={{
@@ -209,56 +221,8 @@ export default function AdminPanelPage() {
         ))}
       </div>
 
-      {/* ── USER APPROVALS TAB ── */}
-      {tab === 'users' && (
-        <div>
-          {usersLoading ? (
-            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Loading…</div>
-          ) : pendingUsers.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">✅</div>
-              <div className="empty-title">No pending registrations</div>
-              <div className="empty-text">New sign-ups will appear here for your approval.</div>
-            </div>
-          ) : (
-            <div className="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pendingUsers.map(u => (
-                    <tr key={u.id}>
-                      <td><strong>{u.name}</strong></td>
-                      <td style={{ color: 'var(--text-3)' }}>{u.email}</td>
-                      <td>
-                        <span className="badge badge-pending" style={{ textTransform: 'capitalize' }}>
-                          {u.role === 'khidmat_guzar' ? 'Khidmat Guzar' : u.role}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-                          <button className="btn btn-green btn-sm" onClick={() => handleApproveUser(u.id)}>
-                            Approve
-                          </button>
-                          <button className="btn btn-red btn-sm" onClick={() => handleRejectUser(u.id, u.name)}>
-                            Reject
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      {/* ── SETTINGS TAB ── */}
+      {tab === 'settings' && <ChangePasswordForm />}
 
       {/* ── BOOKINGS TAB ── */}
       {tab === 'bookings' && <>

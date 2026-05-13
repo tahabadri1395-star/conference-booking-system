@@ -1,11 +1,10 @@
-// routes/rooms.js
 const express = require('express');
 const router = express.Router();
 const ctrl = require('../controllers/roomController');
-const { requireAuth, requireAdmin } = require('../middleware/auth');
+const { requireAdmin } = require('../middleware/auth');
 
-router.get('/', requireAuth, ctrl.getAllRooms);
-router.get('/:id', requireAuth, ctrl.getRoomById);
+router.get('/',    ctrl.getAllRooms);       // public — needed for booking form & schedule
+router.get('/:id', ctrl.getRoomById);      // public
 router.patch('/:id', requireAdmin, ctrl.updateRoom);
 
 module.exports = router;

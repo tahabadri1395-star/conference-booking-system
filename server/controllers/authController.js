@@ -54,33 +54,28 @@ exports.login = (req, res) => {
   }
 };
 
-exports.register = (req, res) => {
+
+exports.changePassword = (req, res) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer '))
+    return res.status(401).json({ success: false, message: 'Not authenticated' });
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password)
-      return res.status(400).json({ success: false, message: 'Name, email and password are required' });
-    if (name.trim().length < 2)
-      return res.status(400).json({ success: false, message: 'Name must be at least 2 characters' });
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return res.status(400).json({ success: false, message: 'Invalid email format' });
-    if (password.length < 6)
-      return res.status(400).json({ success: false, message: 'Password must be at least 6 characters' });
-    if (db.prepare('SELECT 1 FROM users WHERE email = ?').get(email.toLowerCase().trim()))
-      return res.status(409).json({ success: false, message: 'An account with this email already exists' });
+    const decoded = jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword)
+      return res.status(400).json({ success: false, message: 'Current and new password are required' });
+    if (newPassword.length < 6)
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
 
-    const ALLOWED_ROLES = ['user', 'staff', 'khidmat_guzar'];
-    const assignedRole = ALLOWED_ROLES.includes(req.body.role) ? req.body.role : 'user';
+    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(decoded.id);
+    if (!user) return res.status(401).json({ success: false, message: 'User not found' });
+    if (!bcrypt.compareSync(currentPassword, user.password))
+      return res.status(400).json({ success: false, message: 'Current password is incorrect' });
 
-    const id = uuidv4();
-    db.prepare('INSERT INTO users (id, name, email, password, role, status) VALUES (?, ?, ?, ?, ?, ?)').run(
-      id, name.trim(), email.toLowerCase().trim(), bcrypt.hashSync(password, 10), assignedRole, 'pending'
-    );
-
-    const u = safeUser(db.prepare('SELECT * FROM users WHERE id = ?').get(id));
-    // No token issued — account must be approved by admin before login is allowed
-    res.status(201).json({ success: true, message: 'Registration submitted. An admin will review your account before you can sign in.' , data: { user: u } });
-  } catch (err) {
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    db.prepare('UPDATE users SET password = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), user.id);
+    res.json({ success: true, message: 'Password updated successfully' });
+  } catch {
+    res.status(401).json({ success: false, message: 'Invalid or expired token' });
   }
 };
 

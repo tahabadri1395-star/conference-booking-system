@@ -14,6 +14,7 @@ server/.env
 server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal
+!server/data/.gitkeep
 
 # OS
 .DS_Store

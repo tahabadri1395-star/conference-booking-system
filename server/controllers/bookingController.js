@@ -13,16 +13,14 @@ function hasConflict(roomId, date, startTime, endTime, excludeId = null) {
 exports.getAllBookings = (req, res) => {
   try {
     const { status, roomId, date, email } = req.query;
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user?.role === 'admin';
     let query = 'SELECT * FROM bookings WHERE 1=1';
     const params = [];
     if (status) { query += ' AND status = ?'; params.push(status); }
     if (roomId) { query += ' AND room_id = ?'; params.push(roomId); }
     if (date)   { query += ' AND date = ?';    params.push(date); }
-    // Non-admins can only ever see their own bookings
-    if (!isAdmin) {
-      query += ' AND email = ?'; params.push(req.user.email);
-    } else if (email) {
+    // Public or admin: show all bookings; filter by email only if admin explicitly requests it
+    if (email && isAdmin) {
       query += ' AND email = ?'; params.push(email);
     }
     query += ' ORDER BY created_at DESC';
