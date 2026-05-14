@@ -97,8 +97,20 @@ export default function Layout() {
         <NavLink to="/calendar" className={navItem}>
           {Icons.cal}<span>Calendar</span>
         </NavLink>
-        <NavLink to="/book" className={navItem}>
-          {Icons.plus}<span>Book</span>
+        <NavLink to="/book" className={navItem} style={{ position: 'relative' }}>
+          <span style={{
+            background: 'var(--accent)',
+            borderRadius: '14px',
+            padding: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 16px var(--accent-glow)',
+            marginBottom: 2,
+          }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" style={{ width: 20, height: 20 }}><path d="M12 5v14M5 12h14"/></svg>
+          </span>
+          <span>Book</span>
         </NavLink>
         <NavLink to="/my-requests" className={navItem}>
           {Icons.list}<span>Requests</span>
