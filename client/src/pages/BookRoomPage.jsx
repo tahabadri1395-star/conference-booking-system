@@ -8,7 +8,20 @@ import toast from 'react-hot-toast'
 const TIME_SLOTS = []
 for (let h = 7; h <= 21; h++) {
   TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`)
-  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
+  if (h < 21) TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
+}
+
+const getNextSlot = () => {
+  const now = new Date()
+  const mins = now.getHours() * 60 + now.getMinutes()
+  const rounded = Math.ceil((mins + 1) / 30) * 30
+  const clamped = Math.max(7 * 60, Math.min(21 * 60, rounded))
+  return `${String(Math.floor(clamped / 60)).padStart(2, '0')}:${String(clamped % 60).padStart(2, '0')}`
+}
+
+const addMins = (t, m) => {
+  const total = toMin(t) + m
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`
 }
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7) // 7am–9pm
@@ -23,12 +36,13 @@ export default function BookRoomPage() {
   const navigate = useNavigate()
   const today = new Date().toISOString().split('T')[0]
 
+  const initStart = getNextSlot()
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
     date: today,
-    startTime: '09:00',
-    endTime: '10:00',
+    startTime: initStart,
+    endTime: addMins(initStart, 30),
     purpose: '',
     attendees: '',
     roomId: '',
@@ -40,8 +54,19 @@ export default function BookRoomPage() {
   const [submitted, setSubmitted] = useState(null)
 
   const set = (k, v) => {
-    setForm(f => ({ ...f, [k]: v }))
     setErrors(e => ({ ...e, [k]: '' }))
+    if (k === 'startTime') {
+      const newEnd = addMins(v, 30)
+      setForm(f => ({ ...f, startTime: v, endTime: newEnd }))
+    } else if (k === 'date') {
+      setForm(f => {
+        let start = f.startTime
+        if (v === today && toMin(f.startTime) < toMin(getNextSlot())) start = getNextSlot()
+        return { ...f, date: v, startTime: start, endTime: addMins(start, 30) }
+      })
+    } else {
+      setForm(f => ({ ...f, [k]: v }))
+    }
   }
 
   // Load all rooms + all bookings once
@@ -209,14 +234,18 @@ export default function BookRoomPage() {
               <div className="form-group">
                 <label className="form-label">Start Time *</label>
                 <select className="form-select" value={form.startTime} onChange={e => set('startTime', e.target.value)}>
-                  {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TIME_SLOTS
+                    .filter(t => form.date !== today || toMin(t) >= toMin(getNextSlot()))
+                    .map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 {errors.startTime && <span className="form-error">{errors.startTime}</span>}
               </div>
               <div className="form-group">
                 <label className="form-label">End Time *</label>
                 <select className="form-select" value={form.endTime} onChange={e => set('endTime', e.target.value)}>
-                  {TIME_SLOTS.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TIME_SLOTS
+                    .filter(t => toMin(t) >= toMin(form.startTime) + 30)
+                    .map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
                 {errors.endTime && <span className="form-error">{errors.endTime}</span>}
               </div>

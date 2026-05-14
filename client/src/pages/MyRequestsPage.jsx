@@ -30,6 +30,17 @@ export default function MyRequestsPage() {
     }
   }
 
+  const handleCancel = async (id) => {
+    if (!window.confirm('Cancel this booking?')) return
+    try {
+      await api.delete(`/bookings/${id}`)
+      toast.success('Booking cancelled')
+      setBookings(b => b.filter(x => x.id !== id))
+    } catch {
+      toast.error('Failed to cancel booking')
+    }
+  }
+
   useEffect(() => { load() }, [user.email])
 
   const filtered = bookings.filter(b => {
@@ -128,7 +139,18 @@ export default function MyRequestsPage() {
                 )}
               </div>
 
-              <StatusBadge status={b.status} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                <StatusBadge status={b.status} />
+                {new Date(`${b.date}T${b.startTime}`) > new Date() && (
+                  <button
+                    className="btn btn-sm"
+                    style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', fontSize: '0.72rem' }}
+                    onClick={() => handleCancel(b.id)}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>

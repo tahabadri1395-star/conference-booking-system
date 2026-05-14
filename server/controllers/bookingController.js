@@ -122,8 +122,12 @@ exports.deleteBooking = async (req, res) => {
   try {
     const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
     if (!rows[0]) return res.status(404).json({ success: false, message: 'Booking not found' });
+    const isAdmin = req.user?.role === 'admin';
+    const isOwner = req.user?.email === rows[0].email;
+    if (!isAdmin && !isOwner)
+      return res.status(403).json({ success: false, message: 'You can only cancel your own bookings' });
     await pool.query('DELETE FROM bookings WHERE id = $1', [rows[0].id]);
-    res.json({ success: true, message: 'Booking deleted successfully', data: parseBooking(rows[0]) });
+    res.json({ success: true, message: 'Booking cancelled successfully', data: parseBooking(rows[0]) });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }

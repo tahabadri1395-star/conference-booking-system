@@ -14,6 +14,14 @@ exports.requireAuth = (req, res, next) => {
   }
 };
 
+exports.optionalAuth = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    try { req.user = jwt.verify(authHeader.split(' ')[1], JWT_SECRET); } catch {}
+  }
+  next();
+};
+
 exports.requireAdmin = (req, res, next) => {
   exports.requireAuth(req, res, () => {
     if (req.user.role !== 'admin')
