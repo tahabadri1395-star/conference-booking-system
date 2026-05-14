@@ -21,8 +21,6 @@ export default function Layout() {
   const initials = user?.name?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '??'
   const roleLabels = { admin: 'Admin', user: 'User', staff: 'Staff', khidmat_guzar: 'Khidmat Guzar' }
 
-  const navItem = ({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`
-
   return (
     <div className="app-layout">
 
@@ -86,47 +84,6 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
-
-      {/* ── Mobile bottom nav ─────────────────────────────────────────── */}
-      <nav className="bottom-nav">
-        {isAdmin && (
-          <NavLink to="/dashboard" className={navItem}>
-            {Icons.grid}<span>Home</span>
-          </NavLink>
-        )}
-        <NavLink to="/calendar" className={navItem}>
-          {Icons.cal}<span>Calendar</span>
-        </NavLink>
-        <NavLink to="/book" className={navItem} style={{ position: 'relative' }}>
-          <span style={{
-            background: 'var(--accent)',
-            borderRadius: '14px',
-            padding: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 16px var(--accent-glow)',
-            marginBottom: 2,
-          }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" style={{ width: 20, height: 20 }}><path d="M12 5v14M5 12h14"/></svg>
-          </span>
-          <span>Book</span>
-        </NavLink>
-        <NavLink to="/my-requests" className={navItem}>
-          {Icons.list}<span>Requests</span>
-        </NavLink>
-        <NavLink to="/rooms" className={navItem}>
-          {Icons.door}<span>Rooms</span>
-        </NavLink>
-        {isAdmin && (
-          <NavLink to="/admin" className={navItem}>
-            {Icons.shield}<span>Admin</span>
-          </NavLink>
-        )}
-        <button className="bottom-nav-item" onClick={handleLogout}>
-          {Icons.logout}<span>Logout</span>
-        </button>
-      </nav>
 
     </div>
   )
