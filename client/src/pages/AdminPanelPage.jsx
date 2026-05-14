@@ -60,9 +60,10 @@ export default function AdminPanelPage() {
   useEffect(() => { load() }, [load])
 
   const handleCancel = async id => {
-    if (!window.confirm('Cancel this booking?')) return
+    const reason = window.prompt('Reason for cancellation (leave blank if none):')
+    if (reason === null) return // user clicked Cancel button
     try {
-      await api.delete(`/bookings/${id}`)
+      await api.delete(`/bookings/${id}${reason ? `?reason=${encodeURIComponent(reason)}` : ''}`)
       toast.success('Booking cancelled')
       setBookings(b => b.filter(x => x.id !== id))
     } catch { toast.error('Failed to cancel') }

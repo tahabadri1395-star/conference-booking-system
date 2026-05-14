@@ -129,7 +129,9 @@ exports.deleteBooking = async (req, res) => {
     await pool.query('DELETE FROM bookings WHERE id = $1', [rows[0].id]);
     const booking = parseBooking(rows[0]);
     const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [booking.roomId]);
-    if (rr[0]) sendCancellationNotification({ booking, room: rr[0] }).catch(err => console.error('[whatsapp cancel]', err.message));
+    const cancelledBy = isAdmin ? 'Admin' : booking.name;
+    const reason = req.query.reason || '';
+    if (rr[0]) sendCancellationNotification({ booking, room: rr[0], cancelledBy, reason }).catch(err => console.error('[whatsapp cancel]', err.message));
     res.json({ success: true, message: 'Booking cancelled successfully', data: booking });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });

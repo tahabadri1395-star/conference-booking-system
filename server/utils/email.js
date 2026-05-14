@@ -33,17 +33,27 @@ async function sendBookingEmails({ booking, room }) {
   await sendWhatsApp(message);
 }
 
-async function sendCancellationNotification({ booking, room }) {
+async function sendCancellationNotification({ booking, room, cancelledBy, reason }) {
   const message =
     `*Booking Cancelled — MeetingDesk*\n\n` +
     `*Room:* ${room.name}\n` +
     `*Date:* ${booking.date}\n` +
     `*Time:* ${booking.startTime} – ${booking.endTime}\n` +
     `*Purpose:* ${booking.purpose}\n` +
-    `*Cancelled by:* ${booking.name}\n` +
-    `*Email:* ${booking.email}`;
-
+    `*Booked by:* ${booking.name}\n` +
+    `*Email:* ${booking.email}\n` +
+    `*Cancelled by:* ${cancelledBy}` +
+    (reason ? `\n*Reason:* ${reason}` : '');
   await sendWhatsApp(message);
 }
 
-module.exports = { sendBookingEmails, sendCancellationNotification };
+async function sendPasswordResetNotification({ name, email }) {
+  const message =
+    `*Password Reset Request — MeetingDesk*\n\n` +
+    `*Name:* ${name}\n` +
+    `*Email:* ${email}\n\n` +
+    `Please reset this user's password from the Admin Panel.`;
+  await sendWhatsApp(message);
+}
+
+module.exports = { sendBookingEmails, sendCancellationNotification, sendPasswordResetNotification };

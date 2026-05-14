@@ -29,10 +29,12 @@ export function AuthProvider({ children }) {
     return data.data.user;
   };
 
-  const register = async (name, email, password, role) => {
-    const { data } = await api.post('/auth/register', { name, email, password, role });
-    // Account is pending — do NOT log the user in, just return the message
-    return data;
+  const register = async (name, email, password) => {
+    const { data } = await api.post('/auth/register', { name, email, password });
+    localStorage.setItem('token', data.data.token);
+    localStorage.setItem('user', JSON.stringify(data.data.user));
+    setUser(data.data.user);
+    return data.data.user;
   };
 
   const logout = () => {
