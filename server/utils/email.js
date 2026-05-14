@@ -33,4 +33,17 @@ async function sendBookingEmails({ booking, room }) {
   await sendWhatsApp(message);
 }
 
-module.exports = { sendBookingEmails };
+async function sendCancellationNotification({ booking, room }) {
+  const message =
+    `*Booking Cancelled — MeetingDesk*\n\n` +
+    `*Room:* ${room.name}\n` +
+    `*Date:* ${booking.date}\n` +
+    `*Time:* ${booking.startTime} – ${booking.endTime}\n` +
+    `*Purpose:* ${booking.purpose}\n` +
+    `*Cancelled by:* ${booking.name}\n` +
+    `*Email:* ${booking.email}`;
+
+  await sendWhatsApp(message);
+}
+
+module.exports = { sendBookingEmails, sendCancellationNotification };

@@ -1,5 +1,5 @@
 const { pool, uuidv4, parseBooking, parseRoom } = require('../models/db');
-const { sendBookingEmails } = require('../utils/email');
+const { sendBookingEmails, sendCancellationNotification } = require('../utils/email');
 
 async function hasConflict(roomId, date, startTime, endTime, excludeId = null) {
   const { rows } = await pool.query(`
@@ -127,7 +127,10 @@ exports.deleteBooking = async (req, res) => {
     if (!isAdmin && !isOwner)
       return res.status(403).json({ success: false, message: 'You can only cancel your own bookings' });
     await pool.query('DELETE FROM bookings WHERE id = $1', [rows[0].id]);
-    res.json({ success: true, message: 'Booking cancelled successfully', data: parseBooking(rows[0]) });
+    const booking = parseBooking(rows[0]);
+    const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [booking.roomId]);
+    if (rr[0]) sendCancellationNotification({ booking, room: rr[0] }).catch(err => console.error('[whatsapp cancel]', err.message));
+    res.json({ success: true, message: 'Booking cancelled successfully', data: booking });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
