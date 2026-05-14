@@ -17,10 +17,11 @@ exports.getAllBookings = async (req, res) => {
     const params = [];
     let where = 'WHERE 1=1';
 
-    if (status)          { params.push(status);  where += ` AND status = $${params.length}`; }
-    if (roomId)          { params.push(roomId);  where += ` AND room_id = $${params.length}`; }
-    if (date)            { params.push(date);    where += ` AND date = $${params.length}`; }
-    if (email && isAdmin){ params.push(email);   where += ` AND email = $${params.length}`; }
+    if (status)  { params.push(status);  where += ` AND status = $${params.length}`; }
+    if (roomId)  { params.push(roomId);  where += ` AND room_id = $${params.length}`; }
+    if (date)    { params.push(date);    where += ` AND date = $${params.length}`; }
+    if (email && isAdmin) { params.push(email); where += ` AND email = $${params.length}`; }
+    else if (email && req.user && !isAdmin) { params.push(req.user.email); where += ` AND email = $${params.length}`; }
 
     const { rows } = await pool.query(`SELECT * FROM bookings ${where} ORDER BY created_at DESC`, params);
 
