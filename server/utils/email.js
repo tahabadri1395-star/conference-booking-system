@@ -1,11 +1,11 @@
 const nodemailer = require('nodemailer');
 
 function getTransporter() {
-  if (!process.env.BREVO_USER || !process.env.BREVO_PASS) return null;
+  if (!process.env.MAILJET_KEY || !process.env.MAILJET_SECRET) return null;
   return nodemailer.createTransport({
-    host: 'smtp-relay.brevo.com',
+    host: 'in-v3.mailjet.com',
     port: 587,
-    auth: { user: process.env.BREVO_USER, pass: process.env.BREVO_PASS },
+    auth: { user: process.env.MAILJET_KEY, pass: process.env.MAILJET_SECRET },
   });
 }
 
@@ -17,10 +17,12 @@ const row = (label, value) => `
 
 async function sendBookingEmails({ booking, room }) {
   const transporter = getTransporter();
-  if (!transporter) { console.log('[email] BREVO_USER/PASS not set — skipping'); return; }
+  if (!transporter) { console.log('[email] MAILJET_KEY/SECRET not set — skipping'); return; }
 
   const adminTo = process.env.ADMIN_EMAIL;
-  if (!adminTo) { console.log('[email] ADMIN_EMAIL not set — skipping admin notification'); return; }
+  if (!adminTo) { console.log('[email] ADMIN_EMAIL not set — skipping'); return; }
+
+  const FROM = process.env.EMAIL_FROM || process.env.MAILJET_SENDER || process.env.ADMIN_EMAIL;
 
   const adminHtml = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f3f4f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
     <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
@@ -77,14 +79,14 @@ async function sendBookingEmails({ booking, room }) {
 
   const results = await Promise.allSettled([
     transporter.sendMail({
-      from: `"MeetingDesk" <${process.env.BREVO_USER}>`,
+      from: `"MeetingDesk" <${FROM}>`,
       replyTo: `"${booking.name}" <${booking.email}>`,
       to: adminTo,
       subject: `New Booking: ${room.name} on ${booking.date} at ${booking.startTime}`,
       html: adminHtml,
     }),
     transporter.sendMail({
-      from: `"MeetingDesk" <${process.env.BREVO_USER}>`,
+      from: `"MeetingDesk" <${FROM}>`,
       to: booking.email,
       subject: `Booking Confirmed – ${room.name} on ${booking.date}`,
       html: userHtml,
