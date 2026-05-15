@@ -13,6 +13,7 @@ const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun']
 const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
 const toDateStr = d => d.toISOString().split('T')[0]
 const isToday = d => toDateStr(d) === toDateStr(new Date())
+const toAMPM = t => { const [h, m] = t.split(':').map(Number); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2, '0')} ${ampm}` }
 
 function getWeekDays(date) {
   const d = new Date(date)
@@ -51,7 +52,7 @@ function BookingBlock({ b, roomColor, compact }) {
       zIndex: 2,
     }}>
       <div style={{ fontSize: '0.7rem', fontWeight: 700, color: roomColor, lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-        {b.startTime}–{b.endTime}
+        {toAMPM(b.startTime)}–{toAMPM(b.endTime)}
       </div>
       {dur >= 45 && (
         <div style={{ fontSize: '0.68rem', color: 'var(--text)', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 1 }}>
@@ -128,7 +129,7 @@ function WeekView({ weekDays, bookings, rooms, navigate }) {
                 background: today ? 'rgba(124,106,247,0.03)' : 'transparent',
                 cursor: 'pointer',
               }}
-              onClick={() => navigate(`/book`)}
+              onClick={() => navigate('/book', { state: { date: toDateStr(d) } })}
             >
               {/* Hour lines */}
               {HOURS.map((_, i) => (
@@ -228,7 +229,7 @@ function MonthView({ monthGrid, currentDate, bookings, rooms, selectedDay, setSe
                       color: roomColorMap[b.roomId] || '#7c6af7',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
-                      {b.startTime} {b.purpose}
+                      {toAMPM(b.startTime)} {b.purpose}
                     </div>
                   ))}
                   {dayBookings.length > 3 && (
@@ -264,7 +265,7 @@ function MonthView({ monthGrid, currentDate, bookings, rooms, selectedDay, setSe
               <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--green)', margin: '0 auto 10px' }} />
               <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.875rem' }}>Fully available</p>
               <button className="btn btn-primary btn-sm" style={{ marginTop: 12, width: '100%' }}
-                onClick={() => navigate('/book')}>
+                onClick={() => navigate('/book', { state: { date: toDateStr(selectedDay) } })}>
                 Book This Day
               </button>
             </div>
@@ -274,14 +275,14 @@ function MonthView({ monthGrid, currentDate, bookings, rooms, selectedDay, setSe
                 <div key={b.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: roomColorMap[b.roomId] || '#7c6af7', flexShrink: 0 }} />
-                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{b.startTime} – {b.endTime}</span>
+                    <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text)' }}>{toAMPM(b.startTime)} – {toAMPM(b.endTime)}</span>
                   </div>
                   <div style={{ fontSize: '0.82rem', color: 'var(--text)', paddingLeft: 16 }}>{b.purpose}</div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', paddingLeft: 16, marginTop: 2 }}>{b.name} · {b.room?.name}</div>
                 </div>
               ))}
               <button className="btn btn-primary btn-sm" style={{ marginTop: 14, width: '100%' }}
-                onClick={() => navigate('/book')}>
+                onClick={() => navigate('/book', { state: { date: toDateStr(selectedDay) } })}>
                 Book Another Slot
               </button>
             </>

@@ -1,6 +1,6 @@
 // src/pages/BookRoomPage.jsx
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
@@ -34,13 +34,15 @@ const minToLabel = m => {
 export default function BookRoomPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const today = new Date().toISOString().split('T')[0]
 
-  const initStart = getNextSlot()
+  const initialDate = location.state?.date || today
+  const initStart = initialDate === today ? getNextSlot() : '09:00'
   const [form, setForm] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    date: today,
+    date: initialDate,
     startTime: initStart,
     endTime: addMins(initStart, 30),
     purpose: '',
@@ -236,7 +238,7 @@ export default function BookRoomPage() {
                 <select className="form-select" value={form.startTime} onChange={e => set('startTime', e.target.value)}>
                   {TIME_SLOTS
                     .filter(t => form.date !== today || toMin(t) >= toMin(getNextSlot()))
-                    .map(t => <option key={t} value={t}>{t}</option>)}
+                    .map(t => <option key={t} value={t}>{minToLabel(toMin(t))}</option>)}
                 </select>
                 {errors.startTime && <span className="form-error">{errors.startTime}</span>}
               </div>
@@ -245,7 +247,7 @@ export default function BookRoomPage() {
                 <select className="form-select" value={form.endTime} onChange={e => set('endTime', e.target.value)}>
                   {TIME_SLOTS
                     .filter(t => toMin(t) >= toMin(form.startTime) + 30)
-                    .map(t => <option key={t} value={t}>{t}</option>)}
+                    .map(t => <option key={t} value={t}>{minToLabel(toMin(t))}</option>)}
                 </select>
                 {errors.endTime && <span className="form-error">{errors.endTime}</span>}
               </div>
