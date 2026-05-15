@@ -139,6 +139,48 @@ exports.deleteBooking = async (req, res) => {
   }
 };
 
+exports.rescheduleBooking = async (req, res) => {
+  try {
+    const { rows } = await pool.query('SELECT * FROM bookings WHERE id = $1', [req.params.id]);
+    const row = rows[0];
+    if (!row) return res.status(404).json({ success: false, message: 'Booking not found' });
+
+    const isAdmin = req.user?.role === 'admin';
+    const isOwner = req.user?.email === row.email;
+    if (!isAdmin && !isOwner)
+      return res.status(403).json({ success: false, message: 'You can only reschedule your own bookings' });
+
+    const { date, startTime, endTime } = req.body;
+    if (!date || !startTime || !endTime)
+      return res.status(400).json({ success: false, message: 'Date, start time, and end time are required' });
+
+    const today = new Date().toISOString().split('T')[0];
+    if (date < today)
+      return res.status(400).json({ success: false, message: 'Cannot reschedule to a past date' });
+
+    const toMin = (t) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    if (toMin(endTime) <= toMin(startTime))
+      return res.status(400).json({ success: false, message: 'End time must be after start time' });
+    if (toMin(endTime) - toMin(startTime) < 30)
+      return res.status(400).json({ success: false, message: 'Minimum booking duration is 30 minutes' });
+
+    if (await hasConflict(row.room_id, date, startTime, endTime, row.id))
+      return res.status(409).json({ success: false, message: 'This time slot conflicts with an existing booking' });
+
+    await pool.query(
+      'UPDATE bookings SET date = $1, start_time = $2, end_time = $3, updated_at = $4 WHERE id = $5',
+      [date, startTime, endTime, new Date().toISOString(), row.id]
+    );
+
+    const { rows: updated } = await pool.query('SELECT * FROM bookings WHERE id = $1', [row.id]);
+    const booking = parseBooking(updated[0]);
+    const { rows: rr } = await pool.query('SELECT * FROM rooms WHERE id = $1', [booking.roomId]);
+    res.json({ success: true, message: 'Booking rescheduled successfully', data: { ...booking, room: parseRoom(rr[0]) } });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+};
+
 exports.getStats = async (req, res) => {
   try {
     const today = new Date().toISOString().split('T')[0];

@@ -6,6 +6,15 @@ import api from '../utils/api'
 import { format, parseISO, isToday, isFuture } from 'date-fns'
 import toast from 'react-hot-toast'
 
+const TIME_SLOTS = []
+for (let h = 7; h <= 21; h++) {
+  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`)
+  if (h < 21) TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
+}
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+const toAMPM = t => { const [h, m] = t.split(':').map(Number); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2, '0')} ${ampm}` }
+const addMins = (t, m) => { const total = toMin(t) + m; return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` }
+
 function StatusBadge({ status }) {
   return <span className={`badge badge-${status}`}>{status}</span>
 }
@@ -13,10 +22,15 @@ function StatusBadge({ status }) {
 export default function MyRequestsPage() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const today = new Date().toISOString().split('T')[0]
+
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const [rescheduleId, setRescheduleId] = useState(null)
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', startTime: '', endTime: '' })
+  const [rescheduling, setRescheduling] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -38,6 +52,38 @@ export default function MyRequestsPage() {
       setBookings(b => b.filter(x => x.id !== id))
     } catch {
       toast.error('Failed to cancel booking')
+    }
+  }
+
+  const openReschedule = (b) => {
+    setRescheduleId(b.id)
+    setRescheduleForm({ date: b.date, startTime: b.startTime, endTime: b.endTime })
+  }
+
+  const setField = (k, v) => {
+    setRescheduleForm(f => {
+      if (k === 'startTime') {
+        return { ...f, startTime: v, endTime: addMins(v, 30) }
+      }
+      return { ...f, [k]: v }
+    })
+  }
+
+  const handleReschedule = async () => {
+    const { date, startTime, endTime } = rescheduleForm
+    if (!date || !startTime || !endTime) { toast.error('Fill in all fields'); return }
+    if (date < today) { toast.error('Cannot reschedule to a past date'); return }
+    if (toMin(endTime) <= toMin(startTime) + 29) { toast.error('Minimum 30-minute duration'); return }
+    setRescheduling(true)
+    try {
+      const res = await api.patch(`/bookings/${rescheduleId}/reschedule`, { date, startTime, endTime })
+      toast.success('Booking rescheduled!')
+      setBookings(b => b.map(x => x.id === rescheduleId ? { ...x, ...res.data.data } : x))
+      setRescheduleId(null)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reschedule')
+    } finally {
+      setRescheduling(false)
     }
   }
 
@@ -66,6 +112,8 @@ export default function MyRequestsPage() {
       return format(parseISO(date), 'MMM d, yyyy')
     } catch { return date }
   }
+
+  const isFutureBooking = b => new Date(`${b.date}T${b.startTime}`) > new Date()
 
   return (
     <div className="page animate-in">
@@ -114,43 +162,102 @@ export default function MyRequestsPage() {
       ) : (
         <div>
           {filtered.map(b => (
-            <div key={b.id} className="booking-item animate-in">
-              {/* Color bar */}
-              <div style={{
-                width: 4, height: 60, borderRadius: 4, flexShrink: 0,
-                background: b.status === 'approved' ? 'var(--green)' : 'var(--red)'
-              }} />
+            <div key={b.id} style={{ marginBottom: 8 }}>
+              <div className="booking-item animate-in" style={{ marginBottom: 0 }}>
+                {/* Color bar */}
+                <div style={{
+                  width: 4, height: 60, borderRadius: 4, flexShrink: 0,
+                  background: b.status === 'approved' ? 'var(--green)' : 'var(--red)'
+                }} />
 
-              <div className="booking-time-block">
-                <div className="booking-time">{b.startTime}</div>
-                <div className="booking-date-label">{timeUntil(b.date, b.startTime)}</div>
-              </div>
-
-              <div className="booking-info" style={{ flex: 1 }}>
-                <div className="booking-purpose">{b.purpose}</div>
-                <div className="booking-meta">
-                  <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
-                  <span> · {b.startTime}–{b.endTime} · {b.date}</span>
+                <div className="booking-time-block">
+                  <div className="booking-time">{toAMPM(b.startTime)}</div>
+                  <div className="booking-date-label">{timeUntil(b.date, b.startTime)}</div>
                 </div>
-                {b.adminRemarks && (
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 3, fontStyle: 'italic' }}>
-                    "{b.adminRemarks}"
+
+                <div className="booking-info" style={{ flex: 1 }}>
+                  <div className="booking-purpose">{b.purpose}</div>
+                  <div className="booking-meta">
+                    <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
+                    <span> · {toAMPM(b.startTime)}–{toAMPM(b.endTime)} · {b.date}</span>
                   </div>
-                )}
+                  {b.adminRemarks && (
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 3, fontStyle: 'italic' }}>
+                      "{b.adminRemarks}"
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                  <StatusBadge status={b.status} />
+                  {isFutureBooking(b) && (
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'var(--accent-glow)', color: 'var(--accent-2)', border: '1px solid rgba(124,106,247,0.25)', fontSize: '0.72rem' }}
+                        onClick={() => rescheduleId === b.id ? setRescheduleId(null) : openReschedule(b)}
+                      >
+                        {rescheduleId === b.id ? 'Close' : 'Reschedule'}
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', fontSize: '0.72rem' }}
+                        onClick={() => handleCancel(b.id)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                <StatusBadge status={b.status} />
-                {new Date(`${b.date}T${b.startTime}`) > new Date() && (
-                  <button
-                    className="btn btn-sm"
-                    style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)', fontSize: '0.72rem' }}
-                    onClick={() => handleCancel(b.id)}
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
+              {/* Inline reschedule form */}
+              {rescheduleId === b.id && (
+                <div style={{
+                  background: 'var(--bg-2)',
+                  border: '1px solid var(--accent)',
+                  borderTop: 'none',
+                  borderRadius: '0 0 12px 12px',
+                  padding: '16px 16px 14px',
+                  display: 'flex', flexDirection: 'column', gap: 12,
+                }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-2)' }}>
+                    Reschedule Booking
+                  </div>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <div className="form-group" style={{ flex: '1 1 140px', marginBottom: 0 }}>
+                      <label className="form-label">New Date</label>
+                      <input
+                        className="form-input"
+                        type="date"
+                        min={today}
+                        value={rescheduleForm.date}
+                        onChange={e => setField('date', e.target.value)}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                      <label className="form-label">Start Time</label>
+                      <select className="form-select" value={rescheduleForm.startTime} onChange={e => setField('startTime', e.target.value)}>
+                        {TIME_SLOTS.map(t => <option key={t} value={t}>{toAMPM(t)}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                      <label className="form-label">End Time</label>
+                      <select className="form-select" value={rescheduleForm.endTime} onChange={e => setField('endTime', e.target.value)}>
+                        {TIME_SLOTS.filter(t => toMin(t) >= toMin(rescheduleForm.startTime) + 30).map(t => <option key={t} value={t}>{toAMPM(t)}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setRescheduleId(null)}>
+                      Cancel
+                    </button>
+                    <button className="btn btn-primary btn-sm" onClick={handleReschedule} disabled={rescheduling}>
+                      {rescheduling ? 'Saving…' : 'Save New Time'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

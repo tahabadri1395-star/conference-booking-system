@@ -3,6 +3,15 @@ import api from '../utils/api'
 import toast from 'react-hot-toast'
 import { format, parseISO } from 'date-fns'
 
+const TIME_SLOTS = []
+for (let h = 7; h <= 21; h++) {
+  TIME_SLOTS.push(`${String(h).padStart(2, '0')}:00`)
+  if (h < 21) TIME_SLOTS.push(`${String(h).padStart(2, '0')}:30`)
+}
+const toMin = t => { const [h, m] = t.split(':').map(Number); return h * 60 + m }
+const toAMPM = t => { const [h, m] = t.split(':').map(Number); const ampm = h >= 12 ? 'PM' : 'AM'; const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2, '0')} ${ampm}` }
+const addMins = (t, m) => { const total = toMin(t) + m; return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}` }
+
 function ChangePasswordForm() {
   const [form, setForm] = useState({ currentPassword: '', newPassword: '', confirm: '' })
   const [loading, setLoading] = useState(false)
@@ -46,6 +55,9 @@ export default function AdminPanelPage() {
   const [dateFilter, setDateFilter] = useState('')
   const [roomFilter, setRoomFilter] = useState('')
   const [rooms, setRooms] = useState([])
+  const [rescheduleId, setRescheduleId] = useState(null)
+  const [rescheduleForm, setRescheduleForm] = useState({ date: '', startTime: '', endTime: '' })
+  const [rescheduling, setRescheduling] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -58,6 +70,28 @@ export default function AdminPanelPage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  const openReschedule = (b) => {
+    setRescheduleId(b.id)
+    setRescheduleForm({ date: b.date, startTime: b.startTime, endTime: b.endTime })
+  }
+  const setRField = (k, v) => {
+    setRescheduleForm(f => k === 'startTime' ? { ...f, startTime: v, endTime: addMins(v, 30) } : { ...f, [k]: v })
+  }
+  const handleReschedule = async () => {
+    const { date, startTime, endTime } = rescheduleForm
+    if (!date || !startTime || !endTime) { toast.error('Fill in all fields'); return }
+    if (toMin(endTime) <= toMin(startTime) + 29) { toast.error('Minimum 30-minute duration'); return }
+    setRescheduling(true)
+    try {
+      const res = await api.patch(`/bookings/${rescheduleId}/reschedule`, { date, startTime, endTime })
+      toast.success('Booking rescheduled!')
+      setBookings(b => b.map(x => x.id === rescheduleId ? { ...x, ...res.data.data } : x))
+      setRescheduleId(null)
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to reschedule')
+    } finally { setRescheduling(false) }
+  }
 
   const handleCancel = async id => {
     const reason = window.prompt('Reason for cancellation (leave blank if none):')
@@ -153,46 +187,99 @@ export default function AdminPanelPage() {
           ) : filtered.length === 0 ? (
             <div className="empty-state"><div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40,opacity:0.3}}><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div><div className="empty-title">No bookings found</div></div>
           ) : (
-            filtered.map(b => (
-              <div key={b.id} style={{
-                background: 'var(--bg-2)', border: '1px solid var(--border)', borderRadius: 12,
-                padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
-                transition: 'border-color 0.15s',
-              }}>
-                {/* Color bar */}
-                <div style={{ width: 4, height: 52, borderRadius: 4, background: b.room?.color || 'var(--accent)', flexShrink: 0 }} />
+            filtered.map(b => {
+              const isFuture = new Date(`${b.date}T${b.startTime}`) > new Date()
+              return (
+                <div key={b.id} style={{ marginBottom: 2 }}>
+                  <div style={{
+                    background: 'var(--bg-2)', border: `1px solid ${rescheduleId === b.id ? 'var(--accent)' : 'var(--border)'}`,
+                    borderRadius: rescheduleId === b.id ? '12px 12px 0 0' : 12,
+                    padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
+                    transition: 'border-color 0.15s',
+                  }}>
+                    {/* Color bar */}
+                    <div style={{ width: 4, height: 52, borderRadius: 4, background: b.room?.color || 'var(--accent)', flexShrink: 0 }} />
 
-                {/* Date/time block */}
-                <div style={{ background: 'var(--bg-3)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', minWidth: 76, flexShrink: 0 }}>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>{b.startTime}</div>
-                  <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 2, letterSpacing: '0.04em' }}>
-                    {b.date === today ? 'Today' : b.date}
-                  </div>
-                </div>
+                    {/* Date/time block */}
+                    <div style={{ background: 'var(--bg-3)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', minWidth: 76, flexShrink: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>{toAMPM(b.startTime)}</div>
+                      <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 2, letterSpacing: '0.04em' }}>
+                        {b.date === today ? 'Today' : b.date}
+                      </div>
+                    </div>
 
-                {/* Info */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    {b.purpose}
-                  </div>
-                  <div style={{ fontSize: '0.76rem', color: 'var(--text-3)', marginTop: 3 }}>
-                    <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
-                    {' · '}{b.startTime}–{b.endTime}
-                    {' · '}{b.name} · {b.attendees} people
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{b.email}</div>
-                </div>
+                    {/* Info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {b.purpose}
+                      </div>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--text-3)', marginTop: 3 }}>
+                        <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
+                        {' · '}{toAMPM(b.startTime)}–{toAMPM(b.endTime)}
+                        {' · '}{b.name} · {b.attendees} people
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{b.email}</div>
+                    </div>
 
-                {/* Booked time */}
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
-                  <span>{b.createdAt ? format(parseISO(b.createdAt), 'MMM d, HH:mm') : ''}</span>
-                  <button className="btn btn-sm" style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)' }}
-                    onClick={() => handleCancel(b.id)}>
-                    Cancel
-                  </button>
+                    {/* Actions */}
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                      <span>{b.createdAt ? format(parseISO(b.createdAt), 'MMM d, HH:mm') : ''}</span>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {isFuture && (
+                          <button className="btn btn-sm"
+                            style={{ background: 'var(--accent-glow)', color: 'var(--accent-2)', border: '1px solid rgba(124,106,247,0.25)' }}
+                            onClick={() => rescheduleId === b.id ? setRescheduleId(null) : openReschedule(b)}>
+                            {rescheduleId === b.id ? 'Close' : 'Reschedule'}
+                          </button>
+                        )}
+                        <button className="btn btn-sm" style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid rgba(220,38,38,0.2)' }}
+                          onClick={() => handleCancel(b.id)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inline reschedule form */}
+                  {rescheduleId === b.id && (
+                    <div style={{
+                      background: 'var(--bg-2)', border: '1px solid var(--accent)', borderTop: 'none',
+                      borderRadius: '0 0 12px 12px', padding: '16px 18px 14px',
+                      display: 'flex', flexDirection: 'column', gap: 12,
+                    }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-2)' }}>
+                        Reschedule Booking
+                      </div>
+                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        <div className="form-group" style={{ flex: '1 1 140px', marginBottom: 0 }}>
+                          <label className="form-label">New Date</label>
+                          <input className="form-input" type="date" min={today}
+                            value={rescheduleForm.date} onChange={e => setRField('date', e.target.value)} />
+                        </div>
+                        <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                          <label className="form-label">Start Time</label>
+                          <select className="form-select" value={rescheduleForm.startTime} onChange={e => setRField('startTime', e.target.value)}>
+                            {TIME_SLOTS.map(t => <option key={t} value={t}>{toAMPM(t)}</option>)}
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ flex: '1 1 120px', marginBottom: 0 }}>
+                          <label className="form-label">End Time</label>
+                          <select className="form-select" value={rescheduleForm.endTime} onChange={e => setRField('endTime', e.target.value)}>
+                            {TIME_SLOTS.filter(t => toMin(t) >= toMin(rescheduleForm.startTime) + 30).map(t => <option key={t} value={t}>{toAMPM(t)}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setRescheduleId(null)}>Cancel</button>
+                        <button className="btn btn-primary btn-sm" onClick={handleReschedule} disabled={rescheduling}>
+                          {rescheduling ? 'Saving…' : 'Save New Time'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
 
