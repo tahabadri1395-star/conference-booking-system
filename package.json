@@ -2,6 +2,6 @@
   "name": "conference-booking-system",
   "version": "1.0.0",
   "scripts": {
-    "build": "npm --prefix client install && npm --prefix client run build"
+    "build": "sh ./build.sh"
   }
 }
