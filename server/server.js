@@ -33,6 +33,10 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ success: true, message: 'MeetingDesk API is running', timestamp: new Date().toISOString() });
+});
+
 // Ensure DB is connected before handling any request (supports Vercel serverless)
 app.use(async (req, res, next) => {
   try {
@@ -47,10 +51,6 @@ app.use(async (req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/bookings', require('./routes/bookings'));
 app.use('/api/rooms', require('./routes/rooms'));
-
-app.get('/api/health', (req, res) => {
-  res.json({ success: true, message: 'MeetingDesk API is running', timestamp: new Date().toISOString() });
-});
 
 if (isProd) {
   const clientDist = path.join(__dirname, '../client/dist');
