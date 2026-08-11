@@ -97,23 +97,47 @@ export default function Layout() {
         </nav>
 
         <div className="sidebar-footer">
-          <div className="user-row">
-            <div className="user-avatar">{initials}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="user-name">{user?.name}</div>
-              <div className="user-role">{roleLabel[user?.role] || user?.role}</div>
-            </div>
-          </div>
-          <div className="sidebar-actions">
-            <button className="sidebar-action-btn" onClick={() => setDark(d => !d)} title="Toggle theme">
-              {dark ? I.sun : I.moon}
-              {dark ? 'Light' : 'Dark'}
-            </button>
-            <button className="sidebar-action-btn" onClick={() => { logout(); navigate('/login') }} title="Sign out">
-              {I.logout}
-              Sign out
-            </button>
-          </div>
+          {user ? (
+            <>
+              <div className="user-row">
+                <div className="user-avatar">{initials}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div className="user-name">{user.name}</div>
+                  <div className="user-role">{roleLabel[user.role] || user.role}</div>
+                </div>
+              </div>
+              <div className="sidebar-actions">
+                <button className="sidebar-action-btn" onClick={() => setDark(d => !d)} title="Toggle theme">
+                  {dark ? I.sun : I.moon}
+                  {dark ? 'Light' : 'Dark'}
+                </button>
+                <button className="sidebar-action-btn" onClick={() => { logout(); navigate('/login') }} title="Sign out">
+                  {I.logout}
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: '0.75rem', color: 'var(--sb-tx)', lineHeight: 1.5, marginBottom: 10, padding: '0 2px' }}>
+                Sign in to book rooms and manage your requests.
+              </div>
+              <div className="sidebar-actions">
+                <button className="sidebar-action-btn" onClick={() => setDark(d => !d)} title="Toggle theme">
+                  {dark ? I.sun : I.moon}
+                  {dark ? 'Light' : 'Dark'}
+                </button>
+                <button
+                  className="sidebar-action-btn"
+                  style={{ color: 'var(--sb-tx-logo)', fontWeight: 700 }}
+                  onClick={() => navigate('/login')}
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{width:16,height:16}}><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                  Sign In
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </aside>
 

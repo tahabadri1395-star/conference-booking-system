@@ -31,7 +31,7 @@ function MobileTabBar() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  if (!user || location.pathname === '/login') return null
+  if (location.pathname === '/login') return null
 
   const cls = ({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`
 
@@ -49,27 +49,34 @@ function MobileTabBar() {
         <span>Book</span>
       </NavLink>
 
-      <NavLink to="/my-requests" className={cls}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
-        <span>Requests</span>
-      </NavLink>
-
       <NavLink to="/rooms" className={cls}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M15 11h.01"/></svg>
         <span>Rooms</span>
       </NavLink>
 
-      {isAdmin && (
-        <NavLink to="/admin" className={cls}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span>Admin</span>
-        </NavLink>
+      {user ? (
+        <>
+          <NavLink to="/my-requests" className={cls}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+            <span>Requests</span>
+          </NavLink>
+          {isAdmin && (
+            <NavLink to="/admin" className={cls}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              <span>Admin</span>
+            </NavLink>
+          )}
+          <button className="bottom-nav-item" onClick={() => { logout(); navigate('/login') }}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{width:22,height:22}}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+            <span>Logout</span>
+          </button>
+        </>
+      ) : (
+        <button className="bottom-nav-item" onClick={() => navigate('/login')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{width:22,height:22}}><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          <span>Sign In</span>
+        </button>
       )}
-
-      <button className="bottom-nav-item" onClick={() => { logout(); navigate('/login') }}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{width:22,height:22}}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-        <span>Logout</span>
-      </button>
     </nav>
   )
 }
@@ -85,13 +92,17 @@ function AppRoutes() {
         } />
 
         {/* Root */}
-        <Route path="/" element={<Navigate to={user ? '/calendar' : '/login'} replace />} />
+        <Route path="/" element={<Navigate to="/calendar" replace />} />
 
-        {/* All workspace pages inside the sidebar Layout — requires auth */}
+        {/* Public browse pages — no login required */}
+        <Route element={<Layout />}>
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/rooms"    element={<RoomsPage />} />
+        </Route>
+
+        {/* Authenticated pages */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="/calendar"    element={<CalendarPage />} />
           <Route path="/book"        element={<BookRoomPage />} />
-          <Route path="/rooms"       element={<RoomsPage />} />
           <Route path="/my-requests" element={<MyRequestsPage />} />
         </Route>
 
