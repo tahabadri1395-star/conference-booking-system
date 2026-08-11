@@ -123,7 +123,9 @@ function AppRoutes() {
 
 function ThemeInit() {
   const saved = localStorage.getItem('theme')
-  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
+  // default to dark — richer premium look
+  const theme = saved || 'dark'
+  document.documentElement.setAttribute('data-theme', theme)
   return null
 }
 
