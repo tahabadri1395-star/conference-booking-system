@@ -167,23 +167,41 @@ function AppRoutes() {
   )
 }
 
+function ThemeInit() {
+  // Apply saved theme before first render
+  const saved = localStorage.getItem('theme')
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
+  return null
+}
+
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeInit />
       <AuthProvider>
         <AppRoutes />
         <Toaster
           position="top-right"
+          gutter={8}
           toastOptions={{
+            duration: 3500,
             style: {
-              background: 'var(--bg-3)',
+              background: 'var(--bg-2)',
               color: 'var(--text)',
               border: '1px solid var(--border)',
               fontFamily: 'var(--font-sans)',
-              fontSize: '0.875rem',
+              fontSize: '0.855rem',
+              fontWeight: '500',
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-lg)',
+              padding: '12px 16px',
             },
-            success: { iconTheme: { primary: 'var(--green)', secondary: 'var(--bg-3)' } },
-            error:   { iconTheme: { primary: 'var(--red)',   secondary: 'var(--bg-3)' } },
+            success: {
+              iconTheme: { primary: 'var(--green)', secondary: 'var(--green-bg)' },
+            },
+            error: {
+              iconTheme: { primary: 'var(--red)', secondary: 'var(--red-bg)' },
+            },
           }}
         />
       </AuthProvider>
