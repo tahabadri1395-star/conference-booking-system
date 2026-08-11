@@ -168,16 +168,22 @@ export default function BookRoomPage() {
               <span className="badge badge-pending">Pending</span>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn btn-primary" onClick={() => {
               setSubmitted(null)
               setForm(f => ({ ...f, purpose: '', attendees: '' }))
             }}>
               Book Another Room
             </button>
-            <button className="btn btn-secondary" onClick={() => navigate('/my-requests')}>
-              View My Requests
-            </button>
+            {user ? (
+              <button className="btn btn-secondary" onClick={() => navigate('/my-requests')}>
+                View My Requests
+              </button>
+            ) : (
+              <button className="btn btn-secondary" onClick={() => navigate('/login')}>
+                Sign in to track requests
+              </button>
+            )}
           </div>
         </div>
       </div>

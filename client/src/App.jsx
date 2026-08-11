@@ -94,15 +94,15 @@ function AppRoutes() {
         {/* Root */}
         <Route path="/" element={<Navigate to="/calendar" replace />} />
 
-        {/* Public browse pages — no login required */}
+        {/* Public pages — no login required */}
         <Route element={<Layout />}>
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/rooms"    element={<RoomsPage />} />
+          <Route path="/book"     element={<BookRoomPage />} />
         </Route>
 
         {/* Authenticated pages */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
-          <Route path="/book"        element={<BookRoomPage />} />
           <Route path="/my-requests" element={<MyRequestsPage />} />
         </Route>
 
