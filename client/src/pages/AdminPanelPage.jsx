@@ -31,7 +31,7 @@ function ChangePasswordForm() {
   return (
     <div style={{ maxWidth: 420 }}>
       <h2 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: 4 }}>Change Password</h2>
-      <p style={{ fontSize: '0.85rem', color: 'var(--text-3)', marginBottom: 20 }}>Update your admin account password.</p>
+      <p style={{ fontSize: '0.85rem', color: 'var(--tx-3)', marginBottom: 20 }}>Update your admin account password.</p>
       <form onSubmit={handle} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {[['currentPassword','Current Password','current-password'],['newPassword','New Password','new-password'],['confirm','Confirm New Password','new-password']].map(([k,label,ac]) => (
           <div key={k} className="form-group">
@@ -132,14 +132,14 @@ export default function AdminPanelPage() {
       </div>
 
       {/* Tab switcher */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 10, padding: 4, width: 'fit-content' }}>
         {['bookings', 'settings'].map(key => (
           <button key={key} onClick={() => setTab(key)} style={{
             padding: '7px 18px', borderRadius: 7, border: 'none', cursor: 'pointer',
             background: tab === key ? 'var(--bg-2)' : 'transparent',
-            color: tab === key ? 'var(--text)' : 'var(--text-3)',
-            fontFamily: 'var(--font-sans)', fontSize: '0.875rem', fontWeight: tab === key ? 600 : 400,
-            boxShadow: tab === key ? 'var(--shadow)' : 'none', transition: 'all 0.15s',
+            color: tab === key ? 'var(--tx)' : 'var(--tx-3)',
+            fontFamily: 'var(--font)', fontSize: '0.875rem', fontWeight: tab === key ? 600 : 400,
+            boxShadow: tab === key ? 'var(--s2)' : 'none', transition: 'all 0.15s',
             textTransform: 'capitalize',
           }}>
             {key}
@@ -192,7 +192,7 @@ export default function AdminPanelPage() {
               return (
                 <div key={b.id} style={{ marginBottom: 2 }}>
                   <div style={{
-                    background: 'var(--bg-2)', border: `1px solid ${rescheduleId === b.id ? 'var(--accent)' : 'var(--border)'}`,
+                    background: 'var(--bg-2)', border: `1px solid ${rescheduleId === b.id ? 'var(--accent)' : 'var(--line)'}`,
                     borderRadius: rescheduleId === b.id ? '12px 12px 0 0' : 12,
                     padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14,
                     transition: 'border-color 0.15s',
@@ -202,32 +202,32 @@ export default function AdminPanelPage() {
 
                     {/* Date/time block */}
                     <div style={{ background: 'var(--bg-3)', borderRadius: 8, padding: '8px 12px', textAlign: 'center', minWidth: 76, flexShrink: 0 }}>
-                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>{toAMPM(b.startTime)}</div>
-                      <div style={{ fontSize: '0.62rem', color: 'var(--text-3)', textTransform: 'uppercase', marginTop: 2, letterSpacing: '0.04em' }}>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', fontWeight: 700, color: 'var(--tx)', lineHeight: 1.2 }}>{toAMPM(b.startTime)}</div>
+                      <div style={{ fontSize: '0.62rem', color: 'var(--tx-3)', textTransform: 'uppercase', marginTop: 2, letterSpacing: '0.04em' }}>
                         {b.date === today ? 'Today' : b.date}
                       </div>
                     </div>
 
                     {/* Info */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, color: 'var(--text)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ fontWeight: 600, color: 'var(--tx)', fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {b.purpose}
                       </div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-3)', marginTop: 3 }}>
-                        <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--tx-3)', marginTop: 3 }}>
+                        <span style={{ color: b.room?.color || 'var(--accent-text)', fontWeight: 500 }}>{b.room?.name}</span>
                         {' · '}{toAMPM(b.startTime)}–{toAMPM(b.endTime)}
                         {' · '}{b.name} · {b.attendees} people
                       </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{b.email}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--tx-3)', marginTop: 1 }}>{b.email}</div>
                     </div>
 
                     {/* Actions */}
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--tx-3)', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                       <span>{b.createdAt ? format(parseISO(b.createdAt), 'MMM d, HH:mm') : ''}</span>
                       <div style={{ display: 'flex', gap: 6 }}>
                         {isFuture && (
                           <button className="btn btn-sm"
-                            style={{ background: 'var(--accent-glow)', color: 'var(--accent-2)', border: '1px solid rgba(124,106,247,0.25)' }}
+                            style={{ background: 'var(--accent-subtle)', color: 'var(--accent-text)', border: '1px solid rgba(124,106,247,0.25)' }}
                             onClick={() => rescheduleId === b.id ? setRescheduleId(null) : openReschedule(b)}>
                             {rescheduleId === b.id ? 'Close' : 'Reschedule'}
                           </button>
@@ -247,7 +247,7 @@ export default function AdminPanelPage() {
                       borderRadius: '0 0 12px 12px', padding: '16px 18px 14px',
                       display: 'flex', flexDirection: 'column', gap: 12,
                     }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-2)' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-text)' }}>
                         Reschedule Booking
                       </div>
                       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -284,7 +284,7 @@ export default function AdminPanelPage() {
         </div>
 
         {!loading && (
-          <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--text-3)', textAlign: 'right' }}>
+          <div style={{ marginTop: 12, fontSize: '0.78rem', color: 'var(--tx-3)', textAlign: 'right' }}>
             {filtered.length} of {bookings.length} bookings
           </div>
         )}

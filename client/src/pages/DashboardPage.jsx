@@ -1,48 +1,41 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../utils/api'
 import { format, parseISO } from 'date-fns'
 
-function useCountUp(target, duration = 800, active = true) {
+function useCountUp(target, duration = 700, active = true) {
   const [val, setVal] = useState(0)
   useEffect(() => {
-    if (!active || target === 0) { setVal(target); return }
-    const step = Math.ceil(duration / target)
-    let current = 0
-    const timer = setInterval(() => {
-      current = Math.min(current + Math.max(1, Math.ceil(target / (duration / step))), target)
-      setVal(current)
-      if (current >= target) clearInterval(timer)
-    }, step)
-    return () => clearInterval(timer)
+    if (!active || !target) { setVal(target || 0); return }
+    let start = null
+    const step = ts => {
+      if (!start) start = ts
+      const pct = Math.min((ts - start) / duration, 1)
+      setVal(Math.round(pct * target))
+      if (pct < 1) requestAnimationFrame(step)
+    }
+    requestAnimationFrame(step)
   }, [target, active])
   return val
 }
 
-function StatCard({ label, value, color, icon, loading, suffix = '' }) {
-  const count = useCountUp(value ?? 0, 900, !loading)
+function StatCard({ label, value, color, loading, sub }) {
+  const count = useCountUp(value ?? 0, 700, !loading)
   return (
     <div className={`stat-card ${color || ''}`}>
       <div className="stat-label">{label}</div>
       {loading
-        ? <div className="skeleton" style={{ height: 44, width: 72, marginTop: 4 }} />
-        : <div className="stat-value">{count}{suffix}</div>
+        ? <div className="skeleton" style={{ height: 36, width: 60, marginTop: 4 }} />
+        : <div className="stat-value">{count}</div>
       }
-      <div className="stat-icon">{icon}</div>
+      {sub && !loading && <div className="stat-sub">{sub}</div>}
     </div>
   )
 }
 
-function StatusBadge({ status }) {
+function Badge({ status }) {
   return <span className={`badge badge-${status}`}>{status}</span>
-}
-
-const QuickIcons = {
-  book:     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>,
-  calendar: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>,
-  rooms:    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 21h18M5 21V5a2 2 0 012-2h10a2 2 0 012 2v16"/><path d="M15 11h.01"/></svg>,
-  requests: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>,
 }
 
 export default function DashboardPage() {
@@ -57,266 +50,164 @@ export default function DashboardPage() {
     const load = async () => {
       try {
         if (isAdmin) {
-          const [statsRes, bookingsRes] = await Promise.all([
-            api.get('/bookings/stats'),
-            api.get('/bookings')
-          ])
-          setStats(statsRes.data.data)
-          setRecent(bookingsRes.data.data.slice(0, 6))
+          const [sRes, bRes] = await Promise.all([api.get('/bookings/stats'), api.get('/bookings')])
+          setStats(sRes.data.data)
+          setRecent(bRes.data.data.slice(0, 8))
         } else {
           const res = await api.get(`/bookings?email=${user.email}`)
           const all = res.data.data
           setStats({
-            total: all.length,
-            pending: all.filter(b => b.status === 'pending').length,
+            total:    all.length,
             approved: all.filter(b => b.status === 'approved').length,
             rejected: all.filter(b => b.status === 'rejected').length,
             todayBookings: all.filter(b => b.date === today).length,
           })
-          setRecent(all.slice(0, 6))
+          setRecent(all.slice(0, 8))
         }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+      } catch (e) { console.error(e) }
+      finally { setLoading(false) }
     }
     load()
   }, [isAdmin, user, today])
 
-  const greeting = () => {
-    const h = new Date().getHours()
-    if (h < 12) return 'Good morning'
-    if (h < 17) return 'Good afternoon'
-    return 'Good evening'
-  }
+  const hour = new Date().getHours()
+  const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+  const todayItems = recent.filter(b => b.date === today).sort((a, b) => a.startTime.localeCompare(b.startTime))
 
-  const todayItems = recent.filter(b => b.date === today)
+  const dotColor = s => s === 'approved' ? 'green' : s === 'rejected' ? 'red' : 'amber'
 
   return (
     <div className="page animate-in">
 
-      {/* ── Hero Card ───────────────────────────────────────────────── */}
-      <div className="hero-card">
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <div className="hero-title">
-                {greeting()}, {user?.name?.split(' ')[0]} 👋
-              </div>
-              <div className="hero-subtitle">
-                {format(new Date(), 'EEEE, MMMM d, yyyy')} · Here's what's happening today
-              </div>
-            </div>
-            <button
-              className="btn"
-              style={{ background: 'rgba(255,255,255,0.18)', color: 'white', border: '1px solid rgba(255,255,255,0.3)', backdropFilter: 'blur(8px)', minHeight: 40 }}
-              onClick={() => navigate('/book')}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
-              Book a Room
-            </button>
-          </div>
-
-          {/* Today inline stats */}
-          <div style={{ display: 'flex', gap: 24, marginTop: 20, flexWrap: 'wrap' }}>
-            {[
-              { label: "Today's Bookings", value: stats?.todayBookings ?? 0 },
-              { label: 'Approved',          value: stats?.approved     ?? 0 },
-              { label: 'Total',             value: stats?.total        ?? 0 },
-            ].map(({ label, value }) => (
-              <div key={label}>
-                <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'white', fontFamily: 'var(--font-display)', lineHeight: 1 }}>
-                  {loading ? '–' : value}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', marginTop: 3, textTransform: 'uppercase', letterSpacing: '0.07em', fontWeight: 600 }}>
-                  {label}
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ── Welcome banner ── */}
+      <div className="welcome-banner">
+        <div>
+          <div className="welcome-title">{greeting}, {user?.name?.split(' ')[0]}</div>
+          <div className="welcome-sub">{format(new Date(), 'EEEE, d MMMM yyyy')} — {stats?.todayBookings ?? 0} booking{stats?.todayBookings !== 1 ? 's' : ''} today</div>
         </div>
-      </div>
-
-      {/* ── Quick Actions ─────────────────────────────────────────────── */}
-      <div className="quick-actions">
-        <button className="quick-action-btn accent" onClick={() => navigate('/book')}>
-          {QuickIcons.book}
-          Book a Room
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate('/calendar')}>
-          {QuickIcons.calendar}
-          Calendar
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate('/rooms')}>
-          {QuickIcons.rooms}
-          View Rooms
-        </button>
-        <button className="quick-action-btn" onClick={() => navigate(isAdmin ? '/admin' : '/my-requests')}>
-          {QuickIcons.requests}
-          {isAdmin ? 'Manage' : 'My Requests'}
+        <button className="welcome-btn" onClick={() => navigate('/book')}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 5v14M5 12h14"/></svg>
+          New booking
         </button>
       </div>
 
-      {/* ── Stats ─────────────────────────────────────────────────────── */}
+      {/* ── Stats ── */}
       <div className="stats-grid">
-        <StatCard
-          label="Total Bookings" value={stats?.total ?? 0} loading={loading}
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>}
-        />
-        <StatCard
-          label="Approved" value={stats?.approved ?? 0} color="green" loading={loading}
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>}
-        />
-        <StatCard
-          label="Rejected" value={stats?.rejected ?? 0} color="red" loading={loading}
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>}
-        />
-        <StatCard
-          label="Today" value={stats?.todayBookings ?? 0} color="purple" loading={loading}
-          icon={<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>}
-        />
+        <StatCard label="Total bookings" value={stats?.total}    loading={loading} />
+        <StatCard label="Approved"        value={stats?.approved} loading={loading} color="green" />
+        <StatCard label="Rejected"        value={stats?.rejected} loading={loading} color="red" />
+        <StatCard label="Today"           value={stats?.todayBookings} loading={loading} color="blue" />
       </div>
 
-      {/* ── Content Grid ──────────────────────────────────────────────── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 1fr' : '1fr', gap: 18, marginBottom: 18 }}>
+      {/* ── Two-column content ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isAdmin ? '1fr 340px' : '1fr', gap: 16, marginBottom: 16 }}>
 
-        {/* Recent Bookings */}
-        <div className="card">
-          <div className="section-header">
-            <div className="section-title">Recent Bookings</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => navigate(isAdmin ? '/admin' : '/my-requests')}>
-              View all →
-            </button>
+        {/* Recent activity */}
+        <div className="card" style={{ padding: '0' }}>
+          <div className="card-header" style={{ padding: '16px 20px', marginBottom: 0 }}>
+            <span className="card-title">Recent bookings</span>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate(isAdmin ? '/admin' : '/my-requests')}>View all</button>
           </div>
 
           {loading ? (
-            Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="skeleton" style={{ height: 52, marginBottom: 8, borderRadius: 8 }} />
-            ))
+            <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 44, borderRadius: 6 }} />
+              ))}
+            </div>
           ) : recent.length === 0 ? (
-            <div className="empty-state" style={{ padding: '32px 0' }}>
-              <div className="empty-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{width:40,height:40,opacity:0.3}}>
-                  <rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/>
-                </svg>
-              </div>
+            <div className="empty-state">
+              <div className="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg></div>
               <div className="empty-title">No bookings yet</div>
-              <div className="empty-text">Recent requests will appear here</div>
+              <div className="empty-text">Book your first room to get started.</div>
+              <button className="btn btn-primary btn-sm" onClick={() => navigate('/book')}>Book a room</button>
             </div>
           ) : (
-            recent.map(b => (
-              <div key={b.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '11px 12px', borderRadius: 10, marginBottom: 6,
-                background: 'var(--bg-3)', border: '1px solid var(--border)',
-                transition: 'all 0.15s',
-              }}>
-                {/* Status indicator */}
-                <div style={{
-                  width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-                  background: b.status === 'approved' ? 'var(--green)' : b.status === 'rejected' ? 'var(--red)' : 'var(--yellow)',
-                  boxShadow: `0 0 6px ${b.status === 'approved' ? 'rgba(5,150,105,0.5)' : b.status === 'rejected' ? 'rgba(220,38,38,0.5)' : 'rgba(217,119,6,0.5)'}`,
-                }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.845rem', fontWeight: 600, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {b.purpose}
+            <div style={{ padding: '0 20px 4px' }}>
+              {recent.map(b => (
+                <div key={b.id} className="activity-item">
+                  <div className={`activity-dot ${dotColor(b.status)}`} />
+                  <div className="activity-main">
+                    <div className="activity-purpose">{b.purpose}</div>
+                    <div className="activity-meta">
+                      {b.room?.name && <span>{b.room.name} · </span>}
+                      {b.date === today ? 'Today' : format(parseISO(b.date), 'MMM d')} · {b.startTime}–{b.endTime}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>
-                    {b.room?.name} · {b.date === today ? 'Today' : format(parseISO(b.date), 'MMM d')} · {b.startTime}
-                  </div>
+                  <Badge status={b.status} />
                 </div>
-                <StatusBadge status={b.status} />
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Room Usage — admin only */}
+        {/* Room usage — admin only */}
         {isAdmin && stats?.roomStats && (
-          <div className="card">
-            <div className="section-header">
-              <div className="section-title">Room Utilization</div>
-              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rooms')}>View →</button>
+          <div className="card" style={{ padding: '0' }}>
+            <div className="card-header" style={{ padding: '16px 20px', marginBottom: 0 }}>
+              <span className="card-title">Room utilization</span>
+              <button className="btn btn-ghost btn-sm" onClick={() => navigate('/rooms')}>View</button>
             </div>
-            {stats.roomStats.map((r, idx) => {
-              const pct = Math.min(100, Math.round((r.approvedBookings / Math.max(stats.approved, 1)) * 100))
-              return (
-                <div key={r.id} style={{ marginBottom: idx < stats.roomStats.length - 1 ? 16 : 0 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: r.color || 'var(--accent)', flexShrink: 0 }} />
-                      <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)' }}>{r.name}</span>
+            <div style={{ padding: '8px 20px 16px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {stats.roomStats.map(r => {
+                const pct = Math.min(100, stats.approved > 0 ? Math.round((r.approvedBookings / stats.approved) * 100) : 0)
+                return (
+                  <div key={r.id}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: r.color || 'var(--accent)', flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--tx)' }}>{r.name}</span>
+                      </div>
+                      <span style={{ fontSize: '0.72rem', color: 'var(--tx-3)', fontTabularNums: true }}>{r.approvedBookings} · {pct}%</span>
                     </div>
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-3)', fontWeight: 500 }}>
-                      {r.approvedBookings} bookings · {pct}%
-                    </span>
+                    <div style={{ background: 'var(--bg-2)', borderRadius: 4, height: 5, overflow: 'hidden', border: '1px solid var(--line)' }}>
+                      <div style={{ height: '100%', background: r.color || 'var(--accent)', width: `${pct}%`, borderRadius: 4, transition: 'width 1s cubic-bezier(0.4,0,0.2,1)' }} />
+                    </div>
                   </div>
-                  <div style={{ background: 'var(--bg-3)', borderRadius: 8, height: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                    <div style={{
-                      height: '100%',
-                      background: r.color || 'var(--accent-gradient)',
-                      width: `${pct}%`,
-                      borderRadius: 8,
-                      transition: 'width 0.8s cubic-bezier(0.4, 0, 0.2, 1)',
-                      boxShadow: `0 0 8px ${r.color || 'var(--accent-glow)'}`,
-                    }} />
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         )}
       </div>
 
-      {/* ── Today's Schedule ──────────────────────────────────────────── */}
-      <div className="card">
-        <div className="section-header">
-          <div className="section-title">Today's Schedule</div>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-3)', background: 'var(--bg-3)', padding: '4px 10px', borderRadius: 20, border: '1px solid var(--border)' }}>
-            {format(new Date(), 'EEEE, MMMM d')}
-          </span>
+      {/* ── Today's schedule ── */}
+      <div className="card" style={{ padding: 0 }}>
+        <div className="card-header" style={{ padding: '16px 20px', marginBottom: 0 }}>
+          <span className="card-title">Today's schedule</span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--tx-3)' }}>{format(new Date(), 'd MMMM yyyy')}</span>
         </div>
-
-        {loading ? (
-          <div className="skeleton" style={{ height: 60 }} />
-        ) : todayItems.length === 0 ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 0', color: 'var(--text-3)', fontSize: '0.875rem' }}>
-            <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--green-bg)', border: '1px solid var(--green-border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg viewBox="0 0 24 24" fill="none" stroke="var(--green)" strokeWidth="2" style={{width:18,height:18}}>
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>
-              </svg>
+        <div style={{ padding: '0 20px 16px' }}>
+          {loading ? (
+            <div className="skeleton" style={{ height: 48, borderRadius: 6 }} />
+          ) : todayItems.length === 0 ? (
+            <div style={{ display: 'flex', align: 'center', gap: 10, padding: '12px 0', fontSize: '0.845rem', color: 'var(--tx-3)' }}>
+              No meetings scheduled for today.
+              <button className="btn btn-ghost btn-sm" style={{ display: 'inline-flex' }} onClick={() => navigate('/book')}>
+                Book a room
+              </button>
             </div>
-            <div>
-              <div style={{ fontWeight: 600, color: 'var(--green)', marginBottom: 2 }}>All clear today</div>
-              <div>No meetings scheduled.{' '}
-                <button className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', padding: '2px 6px', minHeight: 'unset' }} onClick={() => navigate('/book')}>
-                  Book a room →
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {todayItems.sort((a, b) => a.startTime.localeCompare(b.startTime)).map(b => (
-              <div key={b.id} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px', background: 'var(--bg-3)',
-                borderRadius: 10, border: '1px solid var(--border)',
-              }}>
-                <div style={{ width: 3, height: 40, background: b.status === 'approved' ? 'var(--green)' : 'var(--red)', borderRadius: 4, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text)' }}>{b.purpose}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 2 }}>
-                    {b.startTime} – {b.endTime} · {b.room?.name}
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, paddingTop: 6 }}>
+              {todayItems.map(b => (
+                <div key={b.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '10px 14px', borderRadius: 'var(--r-sm)',
+                  background: 'var(--bg-1)', border: '1px solid var(--line)',
+                }}>
+                  <div style={{ width: 3, alignSelf: 'stretch', background: b.status === 'approved' ? 'var(--green)' : 'var(--red)', borderRadius: 4, flexShrink: 0 }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.845rem', fontWeight: 600, color: 'var(--tx)' }}>{b.purpose}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--tx-3)', marginTop: 1 }}>{b.startTime} – {b.endTime} · {b.room?.name}</div>
                   </div>
+                  <Badge status={b.status} />
                 </div>
-                <StatusBadge status={b.status} />
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
     </div>
   )
 }

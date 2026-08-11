@@ -122,7 +122,7 @@ export default function RoomsPage() {
                         : <span className="badge badge-available" style={{ fontSize: '0.65rem' }}>Free today</span>
                       }
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 2 }}>{r.floor}</div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--tx-3)', marginTop: 2 }}>{r.floor}</div>
                     <div style={{ marginTop: 8, display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                       {r.amenities?.slice(0, 3).map(a => (
                         <span key={a} className="amenity-tag" style={{ fontSize: '0.6rem' }}>{a}</span>
@@ -145,7 +145,7 @@ export default function RoomsPage() {
                   <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', fontWeight: 600 }}>
                     {selected.name}
                   </h2>
-                  <p style={{ color: 'var(--text-3)', fontSize: '0.82rem', marginTop: 2 }}>{selected.floor}</p>
+                  <p style={{ color: 'var(--tx-3)', fontSize: '0.82rem', marginTop: 2 }}>{selected.floor}</p>
                   <div className="room-card-amenities" style={{ marginTop: 8 }}>
                     {selected.amenities?.map(a => (
                       <span key={a} className="amenity-tag">{a}</span>
@@ -161,7 +161,7 @@ export default function RoomsPage() {
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <button
                   onClick={() => shiftDate(-1)}
-                  style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: 'var(--text-2)', fontSize: '0.85rem' }}
+                  style={{ background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: 'var(--tx-2)', fontSize: '0.85rem' }}
                 >
                   ← Prev
                 </button>
@@ -169,13 +169,13 @@ export default function RoomsPage() {
                   <div style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: '1.05rem' }}>
                     {dateLabel}
                   </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--tx-3)', marginTop: 1 }}>
                     {new Date(viewDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
                   </div>
                 </div>
                 <button
                   onClick={() => shiftDate(1)}
-                  style={{ background: 'var(--bg-3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: 'var(--text-2)', fontSize: '0.85rem' }}
+                  style={{ background: 'var(--bg-3)', border: '1px solid var(--line)', borderRadius: 8, padding: '6px 12px', cursor: 'pointer', color: 'var(--tx-2)', fontSize: '0.85rem' }}
                 >
                   Next →
                 </button>
@@ -217,7 +217,7 @@ export default function RoomsPage() {
                         top: i * 56,
                         right: 8,
                         fontSize: '0.65rem',
-                        color: 'var(--text-3)',
+                        color: 'var(--tx-3)',
                         lineHeight: 1,
                         textAlign: 'right',
                       }}
@@ -238,7 +238,7 @@ export default function RoomsPage() {
                         top: i * 56,
                         left: 0, right: 0,
                         height: 1,
-                        background: 'var(--border)',
+                        background: 'var(--line)',
                       }}
                     />
                   ))}
@@ -251,9 +251,9 @@ export default function RoomsPage() {
                         top: i * 56 + 28,
                         left: 0, right: 0,
                         height: 1,
-                        background: 'var(--border)',
+                        background: 'var(--line)',
                         opacity: 0.4,
-                        borderTop: '1px dashed var(--border)',
+                        borderTop: '1px dashed var(--line)',
                       }}
                     />
                   ))}
@@ -306,23 +306,23 @@ export default function RoomsPage() {
                           position: 'absolute',
                           left: 4, right: 4,
                           ...style,
-                          background: isApproved ? 'var(--accent-glow)' : 'var(--yellow-bg)',
+                          background: isApproved ? 'var(--accent-subtle)' : 'var(--amber-bg)',
                           border: `1.5px solid ${isApproved ? 'var(--accent)' : 'rgba(217,119,6,0.4)'}`,
                           borderRadius: 8,
                           padding: '6px 10px',
                           overflow: 'hidden',
-                          boxShadow: isApproved ? '0 2px 8px var(--accent-glow)' : 'none',
+                          boxShadow: isApproved ? '0 2px 8px var(--accent-subtle)' : 'none',
                         }}
                       >
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: isApproved ? 'var(--accent-2)' : 'var(--yellow)', lineHeight: 1.2 }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: isApproved ? 'var(--accent-text)' : 'var(--amber)', lineHeight: 1.2 }}>
                           {b.startTime} – {b.endTime}
                         </div>
                         {durationMins >= 45 && (
                           <>
-                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--tx)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {b.purpose}
                             </div>
-                            <div style={{ fontSize: '0.68rem', color: 'var(--text-3)', marginTop: 1 }}>
+                            <div style={{ fontSize: '0.68rem', color: 'var(--tx-3)', marginTop: 1 }}>
                               {b.name}
                             </div>
                           </>
@@ -332,7 +332,7 @@ export default function RoomsPage() {
                             position: 'absolute', top: 6, right: 8,
                             fontSize: '0.6rem', fontWeight: 600,
                             background: isApproved ? 'var(--accent)' : 'rgba(217,119,6,0.2)',
-                            color: isApproved ? 'white' : 'var(--yellow)',
+                            color: isApproved ? 'white' : 'var(--amber)',
                             padding: '1px 6px', borderRadius: 10,
                           }}
                         >
@@ -351,7 +351,7 @@ export default function RoomsPage() {
                     return (
                       <div style={{ position: 'absolute', left: 0, right: 0, top: `${pct}%`, zIndex: 10, pointerEvents: 'none' }}>
                         <div style={{ position: 'absolute', left: -6, top: -5, width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)' }} />
-                        <div style={{ height: 2, background: 'var(--accent)', marginLeft: 4, boxShadow: '0 0 6px var(--accent-glow)' }} />
+                        <div style={{ height: 2, background: 'var(--accent)', marginLeft: 4, boxShadow: '0 0 6px var(--accent-subtle)' }} />
                         <span style={{ position: 'absolute', right: 0, top: -9, fontSize: '0.6rem', color: 'var(--accent)', fontWeight: 600, background: 'var(--bg-2)', padding: '1px 5px', borderRadius: 4 }}>
                           Now
                         </span>
@@ -362,23 +362,23 @@ export default function RoomsPage() {
               </div>
 
               {/* Legend */}
-              <div style={{ display: 'flex', gap: 16, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 16, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line)', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--accent-glow)', border: '1.5px solid var(--accent)' }} />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-2)' }}>Approved booking</span>
+                  <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--accent-subtle)', border: '1.5px solid var(--accent)' }} />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--tx-2)' }}>Approved booking</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--yellow-bg)', border: '1.5px solid rgba(217,119,6,0.4)' }} />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-2)' }}>Pending booking</span>
+                  <div style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--amber-bg)', border: '1.5px solid rgba(217,119,6,0.4)' }} />
+                  <span style={{ fontSize: '0.72rem', color: 'var(--tx-2)' }}>Pending booking</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 12, height: 12, borderRadius: 3, background: 'rgba(22,163,74,0.06)', border: '1px dashed rgba(22,163,74,0.3)' }} />
-                  <span style={{ fontSize: '0.72rem', color: 'var(--text-2)' }}>Available</span>
+                  <span style={{ fontSize: '0.72rem', color: 'var(--tx-2)' }}>Available</span>
                 </div>
                 {viewDate === today && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <div style={{ width: 12, height: 2, background: 'var(--accent)', borderRadius: 2 }} />
-                    <span style={{ fontSize: '0.72rem', color: 'var(--text-2)' }}>Current time</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--tx-2)' }}>Current time</span>
                   </div>
                 )}
               </div>
@@ -393,25 +393,25 @@ export default function RoomsPage() {
                 <div style={{ textAlign: 'center', padding: '24px 0' }}>
                   <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'var(--green)', margin: '0 auto 10px' }} />
                   <p style={{ color: 'var(--green)', fontWeight: 600, fontSize: '0.9rem' }}>Room is fully available</p>
-                  <p style={{ color: 'var(--text-3)', fontSize: '0.8rem', marginTop: 4 }}>No bookings on this day. Book it now!</p>
+                  <p style={{ color: 'var(--tx-3)', fontSize: '0.8rem', marginTop: 4 }}>No bookings on this day. Book it now!</p>
                   <button className="btn btn-primary btn-sm" style={{ marginTop: 12 }} onClick={() => navigate('/book')}>
                     Book This Room
                   </button>
                 </div>
               ) : (
                 dayBookings.map(b => (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
                     <div style={{
                       width: 4, alignSelf: 'stretch', borderRadius: 4,
-                      background: b.status === 'approved' ? 'var(--accent)' : 'var(--yellow)',
+                      background: b.status === 'approved' ? 'var(--accent)' : 'var(--amber)',
                       flexShrink: 0,
                     }} />
-                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text)', minWidth: 105 }}>
+                    <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--tx)', minWidth: 105 }}>
                       {b.startTime} – {b.endTime}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '0.875rem', color: 'var(--text)', fontWeight: 500 }}>{b.purpose}</div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', marginTop: 1 }}>{b.name}</div>
+                      <div style={{ fontSize: '0.875rem', color: 'var(--tx)', fontWeight: 500 }}>{b.purpose}</div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--tx-3)', marginTop: 1 }}>{b.name}</div>
                     </div>
                     <span className={`badge badge-${b.status}`}>{b.status}</span>
                   </div>
@@ -420,8 +420,8 @@ export default function RoomsPage() {
 
               {/* Free windows list */}
               {freeSlots.length > 0 && dayBookings.length > 0 && (
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line)' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--tx-3)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
                     Available Windows
                   </div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -454,12 +454,12 @@ export default function RoomsPage() {
                   Upcoming Bookings ({upcomingBookings.length})
                 </h3>
                 {upcomingBookings.slice(0, 8).map(b => (
-                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-3)', minWidth: 70 }}>{b.date}</div>
-                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text)', minWidth: 100 }}>
+                  <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '1px solid var(--line)' }}>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--tx-3)', minWidth: 70 }}>{b.date}</div>
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--tx)', minWidth: 100 }}>
                       {b.startTime} – {b.endTime}
                     </div>
-                    <div style={{ flex: 1, fontSize: '0.875rem', color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div style={{ flex: 1, fontSize: '0.875rem', color: 'var(--tx-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {b.purpose}
                     </div>
                     <span className={`badge badge-${b.status}`}>{b.status}</span>

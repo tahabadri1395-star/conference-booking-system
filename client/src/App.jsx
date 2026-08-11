@@ -82,7 +82,7 @@ function PublicLayout({ children }) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Desktop header — hidden on mobile */}
       <header className="public-header" style={{
-        height: 56, background: 'var(--bg-2)', borderBottom: '1px solid var(--border)',
+        height: 56, background: 'var(--bg-2)', borderBottom: '1px solid var(--line)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 50,
       }}>
@@ -187,13 +187,13 @@ export default function App() {
             duration: 3500,
             style: {
               background: 'var(--bg-2)',
-              color: 'var(--text)',
-              border: '1px solid var(--border)',
-              fontFamily: 'var(--font-sans)',
-              fontSize: '0.855rem',
+              color: 'var(--tx)',
+              border: '1px solid var(--line)',
+              fontFamily: 'var(--font)',
+              fontSize: '0.845rem',
               fontWeight: '500',
-              borderRadius: '12px',
-              boxShadow: 'var(--shadow-lg)',
+              borderRadius: 'var(--r-lg)',
+              boxShadow: 'var(--s3)',
               padding: '12px 16px',
             },
             success: {

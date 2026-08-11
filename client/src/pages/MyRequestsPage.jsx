@@ -178,11 +178,11 @@ export default function MyRequestsPage() {
                 <div className="booking-info" style={{ flex: 1 }}>
                   <div className="booking-purpose">{b.purpose}</div>
                   <div className="booking-meta">
-                    <span style={{ color: b.room?.color || 'var(--accent-2)', fontWeight: 500 }}>{b.room?.name}</span>
+                    <span style={{ color: b.room?.color || 'var(--accent-text)', fontWeight: 500 }}>{b.room?.name}</span>
                     <span> · {toAMPM(b.startTime)}–{toAMPM(b.endTime)} · {b.date}</span>
                   </div>
                   {b.adminRemarks && (
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', marginTop: 3, fontStyle: 'italic' }}>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--tx-3)', marginTop: 3, fontStyle: 'italic' }}>
                       "{b.adminRemarks}"
                     </div>
                   )}
@@ -194,7 +194,7 @@ export default function MyRequestsPage() {
                     <div style={{ display: 'flex', gap: 5 }}>
                       <button
                         className="btn btn-sm"
-                        style={{ background: 'var(--accent-glow)', color: 'var(--accent-2)', border: '1px solid rgba(124,106,247,0.25)', fontSize: '0.72rem' }}
+                        style={{ background: 'var(--accent-subtle)', color: 'var(--accent)', border: '1px solid rgba(91,91,214,0.2)', fontSize: '0.72rem' }}
                         onClick={() => rescheduleId === b.id ? setRescheduleId(null) : openReschedule(b)}
                       >
                         {rescheduleId === b.id ? 'Close' : 'Reschedule'}
@@ -221,7 +221,7 @@ export default function MyRequestsPage() {
                   padding: '16px 16px 14px',
                   display: 'flex', flexDirection: 'column', gap: 12,
                 }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-2)' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--accent-text)' }}>
                     Reschedule Booking
                   </div>
                   <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
