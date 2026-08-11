@@ -74,81 +74,24 @@ function MobileTabBar() {
   )
 }
 
-// ── Public layout (no login required) ───────────────────────────────────────
-function PublicLayout({ children }) {
-  const { user, isAdmin } = useAuth()
-  const navigate = useNavigate()
-  return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Desktop header — hidden on mobile */}
-      <header className="public-header" style={{
-        height: 56, background: 'var(--bg-2)', borderBottom: '1px solid var(--line)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 28px', position: 'sticky', top: 0, zIndex: 50,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div className="logo-icon" style={{ width: 30, height: 30 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 16, height: 16, color: 'white' }}>
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <path d="M16 2v4M8 2v4M3 10h18"/>
-            </svg>
-          </div>
-          <span className="logo-text" style={{ fontSize: '1.05rem' }}>Meeting<span>Desk</span></span>
-        </div>
-        <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          <NavLink to="/calendar" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ padding: '6px 12px', borderRadius: 7 }}>Calendar</NavLink>
-          <NavLink to="/book"     className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ padding: '6px 12px', borderRadius: 7 }}>Book a Room</NavLink>
-          <NavLink to="/rooms"    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ padding: '6px 12px', borderRadius: 7 }}>Rooms</NavLink>
-          {isAdmin
-            ? <button className="btn btn-primary btn-sm" onClick={() => navigate('/dashboard')} style={{ marginLeft: 4 }}>Admin →</button>
-            : <button className="btn btn-secondary btn-sm" onClick={() => navigate('/login')} style={{ marginLeft: 4 }}>Sign In</button>
-          }
-        </nav>
-      </header>
-
-      {/* Mobile top bar — shown only on mobile */}
-      <div className="mobile-top-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div className="logo-icon" style={{ width: 28, height: 28 }}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ width: 14, height: 14, color: 'white' }}>
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <path d="M16 2v4M8 2v4M3 10h18"/>
-            </svg>
-          </div>
-          <span className="logo-text" style={{ fontSize: '1.05rem' }}>Meeting<span>Desk</span></span>
-        </div>
-        {!user && (
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/login')}>Sign In</button>
-        )}
-      </div>
-
-      <div className="public-content" style={{ padding: '0 28px' }}>
-        {children}
-      </div>
-    </div>
-  )
-}
-
 function AppRoutes() {
   const { user, isAdmin } = useAuth()
   return (
     <>
       <Routes>
-        {/* Public pages */}
-        <Route path="/book"     element={<PublicLayout><BookRoomPage /></PublicLayout>} />
-        <Route path="/rooms"    element={<PublicLayout><RoomsPage /></PublicLayout>} />
-        <Route path="/calendar" element={<PublicLayout><CalendarPage /></PublicLayout>} />
-
         {/* Login */}
         <Route path="/login" element={
-          user ? <Navigate to={isAdmin ? '/dashboard' : '/my-requests'} replace /> : <LoginPage />
+          user ? <Navigate to={isAdmin ? '/dashboard' : '/calendar'} replace /> : <LoginPage />
         } />
 
         {/* Root */}
-        <Route path="/" element={<Navigate to="/calendar" replace />} />
+        <Route path="/" element={<Navigate to={user ? '/calendar' : '/login'} replace />} />
 
-        {/* Authenticated */}
+        {/* All workspace pages inside the sidebar Layout — requires auth */}
         <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/calendar"    element={<CalendarPage />} />
+          <Route path="/book"        element={<BookRoomPage />} />
+          <Route path="/rooms"       element={<RoomsPage />} />
           <Route path="/my-requests" element={<MyRequestsPage />} />
         </Route>
 
@@ -158,17 +101,16 @@ function AppRoutes() {
           <Route path="/admin"     element={<AdminPanelPage />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/book" replace />} />
+        <Route path="*" element={<Navigate to={user ? '/calendar' : '/login'} replace />} />
       </Routes>
 
-      {/* Global mobile tab bar — renders on all pages when logged in */}
+      {/* Global mobile tab bar */}
       <MobileTabBar />
     </>
   )
 }
 
 function ThemeInit() {
-  // Apply saved theme before first render
   const saved = localStorage.getItem('theme')
   if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark')
   return null
@@ -186,7 +128,7 @@ export default function App() {
           toastOptions={{
             duration: 3500,
             style: {
-              background: 'var(--bg-2)',
+              background: 'var(--bg)',
               color: 'var(--tx)',
               border: '1px solid var(--line)',
               fontFamily: 'var(--font)',
@@ -196,12 +138,8 @@ export default function App() {
               boxShadow: 'var(--s3)',
               padding: '12px 16px',
             },
-            success: {
-              iconTheme: { primary: 'var(--green)', secondary: 'var(--green-bg)' },
-            },
-            error: {
-              iconTheme: { primary: 'var(--red)', secondary: 'var(--red-bg)' },
-            },
+            success: { iconTheme: { primary: 'var(--green)', secondary: 'var(--green-bg)' } },
+            error:   { iconTheme: { primary: 'var(--red)',   secondary: 'var(--red-bg)'   } },
           }}
         />
       </AuthProvider>
