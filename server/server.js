@@ -65,15 +65,24 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: 'Internal server error' });
 });
 
-initDb()
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`\n🚀 Gatherly server running on port ${PORT}\n`);
-    });
-  })
-  .catch((err) => {
-    console.error('Failed to initialise database:', err);
-    process.exit(1);
-  });
+// Start HTTP server immediately so Render's health check passes
+app.listen(PORT, () => {
+  console.log(`\n🚀 MeetingDesk server running on port ${PORT}\n`);
+  connectDb();
+});
+
+async function connectDb(retries = 6, delayMs = 5000) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      await initDb();
+      console.log('[db] Connected and initialised');
+      return;
+    } catch (err) {
+      console.error(`[db] Attempt ${i}/${retries} failed: ${err.message}`);
+      if (i < retries) await new Promise(r => setTimeout(r, delayMs));
+    }
+  }
+  console.error('[db] All connection attempts failed — API calls will return 500 until DB is reachable');
+}
 
 module.exports = app;
