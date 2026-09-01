@@ -61,14 +61,12 @@ async function initDb() {
     );
   }
 
-  const { rows } = await pool.query('SELECT COUNT(*) AS n FROM rooms');
-  if (parseInt(rows[0].n) === 0) {
-    await pool.query(
-      `INSERT INTO rooms (id, name, capacity, floor, amenities, color)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      ['room-1', 'Fakhri Makan Conference Room', 20, '1st Floor', '[]', '#6366f1']
-    );
-  }
+  await pool.query(
+    `INSERT INTO rooms (id, name, capacity, floor, amenities, color)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (id) DO NOTHING`,
+    ['room-1', 'Fakhri Makan Conference Room', 20, '1st Floor', '[]', '#6366f1']
+  );
 }
 
 function parseBooking(row) {
