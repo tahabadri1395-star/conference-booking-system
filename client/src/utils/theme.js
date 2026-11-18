@@ -45,7 +45,7 @@ export function applyTheme(id) {
 // :root[data-style="…"]). They combine with any colour theme.
 export const STYLES = [
   { id: 'glass',   name: 'Glass',   note: 'Frosted panels',     sample: 'Aa', font: 'Inter' },
-  { id: 'atelier', name: 'Atelier', note: 'Editorial, refined', sample: 'Aa', font: 'Instrument Serif' },
+  { id: 'atelier', name: 'Atelier', note: 'Editorial, refined', sample: 'Aa', font: 'Newsreader' },
   { id: 'bold',    name: 'Bold',    note: 'Outlines, hard shadows', sample: 'Aa', font: 'Space Grotesk' },
   { id: 'clay',    name: 'Clay',    note: 'Soft and raised',    sample: 'Aa', font: 'Nunito' },
   { id: 'grid',    name: 'Grid',    note: 'Swiss, square',      sample: 'Aa', font: 'Inter Tight' },

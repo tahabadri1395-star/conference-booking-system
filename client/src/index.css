@@ -22,8 +22,8 @@
   --t3: 0.36s cubic-bezier(0.4,0,0.2,1);
 
   --blur: blur(20px) saturate(150%);
-  --display-weight: 400;
-  --display-tracking: -0.01em;
+  --display-weight: 700;
+  --display-tracking: -0.035em;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -1138,7 +1138,8 @@ button { font-family: var(--font); }
 /* ═══════════════════════════════════════════════════════════
    PREMIUM BOOKING — shared pieces
 ═══════════════════════════════════════════════════════════ */
-:root { --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif; }
+/* Headings use the same family as the text; a style may swap both together. */
+:root { --font-serif: var(--font); }
 
 
 .eyebrow {
@@ -1196,10 +1197,10 @@ button { font-family: var(--font); }
 }
 .hero-display {
   font-family: var(--font-serif); font-weight: var(--display-weight); letter-spacing: var(--display-tracking);
-  font-size: clamp(2.6rem, 5.4vw, 4.4rem); line-height: 1.0;
+  font-size: clamp(2.4rem, 4.4vw, 3.6rem); line-height: 1.05;
   color: var(--tx); margin: 14px 0 18px;
 }
-.hero-display em { font-style: italic; color: var(--accent-text); }
+.hero-display em { font-style: normal; color: var(--accent-text); }
 .hero-lede { font-size: 1.05rem; line-height: 1.65; color: var(--tx-2); max-width: 520px; }
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
 .hero-ctas .btn-xl { height: 52px; padding: 0 26px; border-radius: var(--r-full); font-size: 0.95rem; }
@@ -1522,7 +1523,7 @@ button { font-family: var(--font); }
 .ticket-grid span { display: block; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--tx-3); }
 .ticket-grid strong { display: block; font-size: 0.95rem; color: var(--tx); font-weight: 600; margin-top: 3px; }
 .ticket-ref { padding: 14px 28px 20px; border-top: 1px solid var(--line); font-size: 0.78rem; color: var(--tx-3); }
-.ticket-ref strong { color: var(--tx); font-family: var(--font-mono); letter-spacing: 0.08em; margin-left: 6px; }
+.ticket-ref strong { color: var(--tx); font-variant-numeric: tabular-nums; letter-spacing: 0.08em; margin-left: 6px; }
 .confirm-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 26px; }
 .confirm-actions .btn { border-radius: var(--r-full); }
 
@@ -1607,6 +1608,9 @@ button { font-family: var(--font); }
 
 /* ── Atelier: boutique-hotel editorial ── */
 :root[data-style="atelier"] {
+  --font: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --font-display: var(--font);
+  --font-serif: var(--font);
   --r-xs: 0px; --r-sm: 2px; --r: 2px; --r-lg: 3px; --r-xl: 4px; --r-2xl: 4px; --r-full: 2px;
   --blur: none;
   --display-weight: 400; --display-tracking: 0em;
@@ -1625,14 +1629,15 @@ button { font-family: var(--font); }
   --art-grad: linear-gradient(160deg, color-mix(in srgb, var(--tx) 82%, var(--accent)), var(--tx));
 }
 :root[data-style="atelier"] :is(.page-title, .book-step-title, .card-title, .stat-value, .welcome-title, .login-headline, .empty-title, .room-card-name) {
-  font-family: var(--font-serif); font-weight: 400; letter-spacing: 0;
+  font-weight: 500; letter-spacing: -0.01em;
 }
 :root[data-style="atelier"] .page-title { font-size: 2.1rem; }
 :root[data-style="atelier"] .book-step-title { font-size: 1.45rem; }
 :root[data-style="atelier"] .stat-value { font-size: 2.6rem; }
 :root[data-style="atelier"] .eyebrow { letter-spacing: 0.24em; font-size: 0.66rem; }
 :root[data-style="atelier"] :is(.card, .stat-card, .room-card, .booking-item, .live-card, .summary-card, .ticket) { border-color: var(--line-3); }
-:root[data-style="atelier"] .book-step-num { border-radius: 0; font-family: var(--font-serif); font-size: 1rem; }
+:root[data-style="atelier"] .book-step-num { border-radius: 0; font-size: 1rem; }
+:root[data-style="atelier"] .hero-display { font-size: clamp(2.6rem, 5.4vw, 4.4rem); }
 :root[data-style="atelier"] .hero-display em { font-style: italic; color: var(--tx-2); }
 
 /* ── Bold: neo-brutalist ── */
@@ -1741,7 +1746,6 @@ button { font-family: var(--font); }
 /* ── Aurora: vivid drifting colour behind clear glass ── */
 :root[data-style="aurora"] {
   --blur: blur(28px) saturate(170%);
-  --display-weight: 400;
   --scene:
     radial-gradient(ellipse 50% 45% at 15% 20%, color-mix(in srgb, var(--p-grad-a) 70%, transparent), transparent 65%),
     radial-gradient(ellipse 45% 50% at 85% 15%, color-mix(in srgb, var(--p-grad-b) 65%, transparent), transparent 65%),
