@@ -34,9 +34,9 @@ function getWeekDays(date) {
 
 // Status → colour meta
 const STATUS_META = {
-  approved: { bg: 'rgba(52,211,153,0.12)', border: '#34d399', text: '#34d399', solid: '#10b981' },
-  pending:  { bg: 'rgba(251,191,36,0.12)',  border: '#fbbf24', text: '#fbbf24', solid: '#f59e0b' },
-  rejected: { bg: 'rgba(248,113,113,0.12)', border: '#f87171', text: '#f87171', solid: '#ef4444' },
+  approved: { bg: 'var(--green-bg)', border: 'var(--green)', text: 'var(--green-tx)', solid: 'var(--green)' },
+  pending:  { bg: 'var(--amber-bg)', border: 'var(--amber)', text: 'var(--amber-tx)', solid: 'var(--amber)' },
+  rejected: { bg: 'var(--red-bg)', border: 'var(--red)', text: 'var(--red-tx)', solid: 'var(--red)' },
 }
 const meta = s => STATUS_META[s] || STATUS_META.approved
 
@@ -89,7 +89,7 @@ function MiniCal({ focusDate, selectedDate, onDateClick, dotDates }) {
                 position: 'relative', width: 28, height: 28, margin: '0 auto',
                 borderRadius: '50%', border: 'none', cursor: 'pointer',
                 background: isTdy && !isSel ? 'var(--accent)' : isSel ? 'var(--accent-subtle)' : 'transparent',
-                color: isTdy && !isSel ? 'white' : isSel ? 'var(--accent-text)' : 'var(--tx-2)',
+                color: isTdy && !isSel ? 'var(--on-accent)' : isSel ? 'var(--accent-text)' : 'var(--tx-2)',
                 fontSize: '0.7rem', fontWeight: isTdy || isSel ? 700 : 500,
                 outline: isSel ? '2px solid var(--accent)' : 'none',
                 transition: 'all 0.1s',
@@ -126,7 +126,7 @@ function EventPopover({ booking, anchorRect, onClose, navigate }) {
   return (
     <div ref={ref} style={{
       position: 'fixed', zIndex: 200, top, left, width: popW,
-      background: 'var(--bg-1)', border: '1px solid var(--line)',
+      background: 'var(--bg-solid)', border: '1px solid var(--line-2)',
       borderRadius: 16, boxShadow: 'var(--s4)', overflow: 'hidden',
       animation: 'scaleIn 0.15s cubic-bezier(0.4,0,0.2,1)',
     }}>
@@ -220,7 +220,7 @@ function TimeGrid({ days, bookings, onEventClick, navigate }) {
                 background: isT ? 'var(--accent)' : 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '0.9rem', fontWeight: isT ? 700 : 500,
-                color: isT ? 'white' : 'var(--tx)',
+                color: isT ? 'var(--on-accent)' : 'var(--tx)',
               }}>{d.getDate()}</div>
             </div>
           )
@@ -249,7 +249,7 @@ function TimeGrid({ days, bookings, onEventClick, navigate }) {
                 onClick={e => { if (e.target === e.currentTarget) navigate('/book', { state: { date: ds } }) }}
                 style={{
                   flex: 1, borderLeft: '1px solid var(--line)', position: 'relative', height: totalH,
-                  background: isT ? 'rgba(124,110,240,0.03)' : 'transparent', cursor: 'default',
+                  background: isT ? 'color-mix(in srgb, var(--accent) 5%, transparent)' : 'transparent', cursor: 'default',
                 }}>
                 {hours.map((_, i) => (
                   <div key={i} style={{ position: 'absolute', top: i * HOUR_H, left: 0, right: 0, borderTop: '1px solid var(--line)', opacity: 0.5 }} />
@@ -261,7 +261,7 @@ function TimeGrid({ days, bookings, onEventClick, navigate }) {
                 {/* Now line */}
                 {isT && nowY >= 0 && (
                   <div style={{ position: 'absolute', left: 0, right: 0, top: nowY, zIndex: 10, pointerEvents: 'none', display: 'flex', alignItems: 'center' }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--red)', marginLeft: -5, flexShrink: 0, boxShadow: '0 0 0 3px rgba(248,113,113,0.25)' }} />
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'var(--red)', marginLeft: -5, flexShrink: 0, boxShadow: '0 0 0 3px var(--red-bg)' }} />
                     <div style={{ flex: 1, height: 2, background: 'var(--red)', opacity: 0.85 }} />
                   </div>
                 )}
@@ -334,8 +334,8 @@ function MonthGrid({ year, month, bookings, onEventClick, onDayClick, selectedDa
             <div key={ds} onClick={() => onDayClick(ds)}
               style={{
                 minHeight: 96, borderRadius: 10, padding: '8px 8px 6px',
-                border: `1px solid ${isSel ? 'var(--accent)' : isT ? 'rgba(124,110,240,0.3)' : 'var(--line)'}`,
-                background: isSel ? 'var(--accent-subtle)' : isT ? 'rgba(124,110,240,0.04)' : 'var(--bg-1)',
+                border: `1px solid ${isSel ? 'var(--accent)' : isT ? 'var(--accent-border)' : 'var(--line)'}`,
+                background: isSel ? 'var(--accent-subtle)' : isT ? 'color-mix(in srgb, var(--accent) 6%, transparent)' : 'var(--bg-1)',
                 cursor: 'pointer', transition: 'all 0.12s',
               }}
               onMouseEnter={e => { if (!isSel && !isT) e.currentTarget.style.borderColor = 'var(--line-2)' }}
@@ -347,7 +347,7 @@ function MonthGrid({ year, month, bookings, onEventClick, onDayClick, selectedDa
                   background: isT ? 'var(--accent)' : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: '0.78rem', fontWeight: isT ? 700 : 500,
-                  color: isT ? 'white' : 'var(--tx)',
+                  color: isT ? 'var(--on-accent)' : 'var(--tx)',
                 }}>{day}</span>
               </div>
 
@@ -409,7 +409,7 @@ function AgendaView({ bookings, onEventClick, navigate }) {
     <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', maxWidth: 680, width: '100%' }}>
       {groups.map(({ label, ds, bookings: grpBs }) => (
         <div key={ds} style={{ marginBottom: 28 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, position: 'sticky', top: 0, background: 'var(--bg)', padding: '6px 0', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, position: 'sticky', top: 0, background: 'var(--bg-solid)', borderRadius: 'var(--r)', paddingLeft: 10, paddingRight: 10, padding: '6px 0', zIndex: 10 }}>
             <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
             <h3 style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--tx)' }}>{label}</h3>
             <span style={{ fontSize: '0.68rem', fontWeight: 600, padding: '1px 8px', borderRadius: 20, background: 'var(--bg-2)', color: 'var(--tx-3)', border: '1px solid var(--line)' }}>{grpBs.length}</span>
@@ -550,15 +550,15 @@ export default function CalendarPage() {
   )
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - var(--topbar-h))', overflow: 'hidden', background: 'var(--bg)' }}>
+    <div style={{ display: 'flex', height: 'calc(100vh - var(--topbar-h))', overflow: 'hidden' }}>
 
       {/* ── Left Sidebar ── */}
       <div style={{
-        width: sidebarOpen ? 200 : 0, flexShrink: 0,
+        width: sidebarOpen ? 230 : 0, flexShrink: 0,
         transition: 'width 0.2s cubic-bezier(0.4,0,0.2,1)', overflow: 'hidden',
       }}>
         <div style={{
-          width: 200, height: '100%', background: 'var(--bg-1)',
+          width: 230, height: '100%', background: 'var(--bg-1)',
           borderRight: '1px solid var(--line)',
           display: 'flex', flexDirection: 'column', overflow: 'hidden',
         }}>
@@ -666,7 +666,7 @@ export default function CalendarPage() {
           </div>
 
           {/* Nav row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8, padding: '8px 20px' }}>
             <button onClick={prevPeriod}
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--tx-3)', padding: 6, borderRadius: 8, display: 'flex', transition: 'background 0.1s' }}
               onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-2)'}
@@ -693,7 +693,7 @@ export default function CalendarPage() {
                 <button key={v.id} onClick={() => setView(v.id)}
                   style={{
                     padding: '4px 13px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                    background: view === v.id ? 'var(--bg-1)' : 'transparent',
+                    background: view === v.id ? 'var(--bg-solid)' : 'transparent',
                     color: view === v.id ? 'var(--tx)' : 'var(--tx-3)',
                     fontFamily: 'var(--font)', fontSize: '0.78rem',
                     fontWeight: view === v.id ? 700 : 500,

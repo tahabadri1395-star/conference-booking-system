@@ -227,7 +227,7 @@ export default function MyRequestsPage() {
                       <div style={{ display:'flex', gap:6 }}>
                         <button
                           className="btn btn-sm"
-                          style={{ background: isRescheduling ? 'var(--accent)' : 'var(--accent-subtle)', color: isRescheduling ? 'white' : 'var(--accent-text)', border:`1px solid var(--accent-border)` }}
+                          style={{ background: isRescheduling ? 'var(--accent)' : 'var(--accent-subtle)', color: isRescheduling ? 'var(--on-accent)' : 'var(--accent-text)', border:`1px solid var(--accent-border)` }}
                           onClick={() => setRescheduleId(isRescheduling ? null : b.id)}>
                           {isRescheduling ? 'Close' : 'Reschedule'}
                         </button>

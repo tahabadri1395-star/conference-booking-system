@@ -25,8 +25,8 @@ function RejectModal({ onConfirm, onClose }) {
   useEffect(() => { inputRef.current?.focus() }, [])
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
-      <div style={{ position:'absolute', inset:0, background:'rgba(0,0,0,0.6)', backdropFilter:'blur(4px)' }} onClick={onClose} />
-      <div className="animate-scale" style={{ position:'relative', zIndex:1, background:'var(--bg-1)', border:'1px solid var(--line-2)', borderRadius:'var(--r-xl)', padding:'24px 26px', width:'100%', maxWidth:400, boxShadow:'var(--s4)' }}>
+      <div style={{ position:'absolute', inset:0, background:'var(--overlay)', backdropFilter:'blur(4px)' }} onClick={onClose} />
+      <div className="animate-scale" style={{ position:'relative', zIndex:1, background:'var(--bg-solid)', border:'1px solid var(--line-2)', borderRadius:'var(--r-xl)', padding:'24px 26px', width:'100%', maxWidth:400, boxShadow:'var(--s4)' }}>
         <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
           <div style={{ width:34, height:34, borderRadius:10, background:'var(--red-bg)', border:'1px solid var(--red-bd)', display:'flex', alignItems:'center', justifyContent:'center' }}>
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--red)" strokeWidth="2" style={{width:16,height:16}}><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -378,7 +378,7 @@ export default function AdminPanelPage() {
                           {/* Reschedule — future bookings */}
                           {isFut && (
                             <button className="btn btn-sm"
-                              style={{ background: isRSch ? 'var(--accent)' : 'var(--accent-subtle)', color: isRSch ? 'white' : 'var(--accent-text)', border:'1px solid var(--accent-border)' }}
+                              style={{ background: isRSch ? 'var(--accent)' : 'var(--accent-subtle)', color: isRSch ? 'var(--on-accent)' : 'var(--accent-text)', border:'1px solid var(--accent-border)' }}
                               onClick={() => setRescheduleId(isRSch ? null : b.id)}>
                               {isRSch ? 'Close' : 'Reschedule'}
                             </button>

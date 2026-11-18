@@ -24,7 +24,7 @@ async function initDb() {
       capacity  INTEGER NOT NULL DEFAULT 20,
       floor     TEXT NOT NULL,
       amenities TEXT NOT NULL DEFAULT '[]',
-      color     TEXT NOT NULL DEFAULT '#6366f1'
+      color     TEXT NOT NULL DEFAULT '#b07a3a'
     );
 
     CREATE TABLE IF NOT EXISTS bookings (
@@ -65,8 +65,11 @@ async function initDb() {
     `INSERT INTO rooms (id, name, capacity, floor, amenities, color)
      VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (id) DO NOTHING`,
-    ['room-1', 'Fakhri Makan Conference Room', 20, '1st Floor', '[]', '#6366f1']
+    ['room-1', 'Fakhri Makan Conference Room', 20, '1st Floor', '[]', '#b07a3a']
   );
+
+  // Rooms seeded with the old purple default take the warm brand colour.
+  await pool.query(`UPDATE rooms SET color = '#b07a3a' WHERE color = '#6366f1'`);
 }
 
 function parseBooking(row) {

@@ -117,7 +117,7 @@ export default function RoomsPage() {
                 key={r.id}
                 onClick={() => selectRoom(r)}
                 style={{
-                  background: isSelected ? 'var(--bg)' : 'var(--bg)',
+                  background: isSelected ? 'var(--bg-hover)' : 'var(--bg-1)',
                   border: `1.5px solid ${isSelected ? 'var(--accent)' : 'var(--line)'}`,
                   borderRadius: 14,
                   padding: '14px 16px',
@@ -379,14 +379,14 @@ export default function RoomsPage() {
                           top: `${slotPct(s)}%`,
                           height: `${slotPct(e) - slotPct(s)}%`,
                           background: isApproved
-                            ? 'linear-gradient(135deg, rgba(79,70,229,0.12), rgba(124,58,237,0.08))'
+                            ? 'linear-gradient(135deg, var(--accent-subtle), var(--accent-subtle2))'
                             : 'var(--amber-bg)',
-                          border: `1.5px solid ${isApproved ? 'rgba(79,70,229,0.35)' : 'var(--amber-bd)'}`,
+                          border: `1.5px solid ${isApproved ? 'var(--accent-border)' : 'var(--amber-bd)'}`,
                           borderLeft: `3px solid ${isApproved ? 'var(--accent)' : 'var(--amber)'}`,
                           borderRadius: 8,
                           padding: '6px 10px',
                           overflow: 'hidden',
-                          boxShadow: isApproved ? '0 2px 12px rgba(79,70,229,0.15)' : '0 2px 8px rgba(217,119,6,0.1)',
+                          boxShadow: isApproved ? '0 2px 12px var(--accent-subtle)' : '0 2px 8px var(--amber-bg)',
                           animation: `scaleIn 0.3s ${i * 0.06}s cubic-bezier(0.4,0,0.2,1) both`,
                         }}
                       >
@@ -405,7 +405,7 @@ export default function RoomsPage() {
                           position: 'absolute', top: 5, right: 7,
                           fontSize: '0.58rem', fontWeight: 700,
                           background: isApproved ? 'var(--accent)' : 'transparent',
-                          color: isApproved ? 'white' : 'var(--amber)',
+                          color: isApproved ? 'var(--on-accent)' : 'var(--amber)',
                           padding: '1px 6px', borderRadius: 20,
                         }}>
                           {b.status}
@@ -428,10 +428,10 @@ export default function RoomsPage() {
                           boxShadow: '0 0 0 3px var(--accent-subtle), 0 0 10px var(--accent)',
                           animation: 'pulseGlow 2s ease infinite',
                         }} />
-                        <div style={{ height: 2, background: 'linear-gradient(90deg, var(--accent), rgba(124,58,237,0.3))', marginLeft: 5, borderRadius: 2 }} />
+                        <div style={{ height: 2, background: 'linear-gradient(90deg, var(--accent), var(--accent-border))', marginLeft: 5, borderRadius: 2 }} />
                         <span style={{
                           position: 'absolute', right: 6, top: -9,
-                          fontSize: '0.6rem', color: 'white', fontWeight: 700,
+                          fontSize: '0.6rem', color: 'var(--on-accent)', fontWeight: 700,
                           background: 'var(--accent)',
                           padding: '2px 7px', borderRadius: 20,
                           boxShadow: '0 2px 8px var(--accent-glow)',
